@@ -1,8 +1,12 @@
 @import 'katex/dist/katex.min.css';
+@import '@fontsource/source-sans-pro/400.css';
+@import '@fontsource/source-sans-pro/400-italic.css';
+@import '@fontsource/source-sans-pro/600.css';
+@import '@fontsource/source-sans-pro/700.css';
 
 /* The entire visual identity lives here. Charts use these same tokens. */
 :root {
-  --paper: #f7f5f0;
+  --paper: #ffffff;
   --surface: #eeece5;
   --ink: #262824;
   --muted: #60635b;
@@ -12,8 +16,8 @@
   --series-1: #a84e32;
   --series-2: #426e7a;
   --series-3: #657345;
-  --font-heading: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
-  --font-body: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Source Sans Pro', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: var(--font-body);
   --page-width: 1220px;
   --reading-width: 760px;
 }

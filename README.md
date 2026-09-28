@@ -1,6 +1,6 @@
 # IB PhD Macroeconomics 1
 
-A course companion for the `adityapolisetty/IB-PhD-Macroeconomics-1` repository, with seven interactive lessons, written economic intuition, LaTeX equations and Jupyter notebooks. The interface uses a warm paper background, serif headings, restrained colour and custom SVG charts.
+A course companion for the `adityapolisetty/IB-PhD-Macroeconomics-1` repository, with seven interactive lessons, written economic intuition, LaTeX equations and Jupyter notebooks. The interface uses a white background, Source Sans Pro typography, restrained colour and custom SVG charts.
 
 [Open the course website](https://adityapolisetty.github.io/IB-PhD-Macroeconomics-1/).
 
@@ -47,7 +47,7 @@ The numbering follows the teaching plan; tutorials 4, 5 and 8 have no Python sec
 - **Each model's controls and interpretation:** its `*Explorer.svelte` component.
 - **Live model equations and calibration:** `src/lib/models.js`.
 
-The theme uses system fonts, including a serif font stack. Dependencies and mathematical fonts are bundled into the site. No CDN is needed for the finished pages.
+The theme bundles Source Sans Pro for headings and body text, with system fonts as fallbacks. Dependencies and mathematical fonts are bundled into the site. No CDN is needed for the finished pages.
 
 Each lesson moves through intuition, model, a prediction, an experiment and interpretation. Keep experiments small enough to explain one mechanism at a time. The questions reveal their answers through native disclosure controls.
 
