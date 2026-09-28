@@ -23,6 +23,18 @@ pnpm preview
 
 `pnpm test` checks the economic mechanisms and numerical calculations. Building renders the MDX, mathematics, routes and interactive components, and copies the seven notebooks into the public output.
 
+## Keep generated files local in Dropbox
+
+On Windows with a personal Dropbox account, run this in PowerShell 7 before installing dependencies or building. Any existing folder contents must be available offline first:
+
+```powershell
+pwsh -File scripts/dropbox-local.ps1
+```
+
+The helper marks `node_modules`, `.pnpm-store`, `.cache`, `.verification`, `dist`, `.astro`, `.pages-publish` and the existing `.git` directory as [local-only in Dropbox](https://help.dropbox.com/sync/ignored-files). Source files and notebooks continue to sync. Ignored folders remain on this computer and are removed from Dropbox's cloud copy; these settings apply to this computer only.
+
+Run the helper again if a generated folder is deleted and recreated. The local AP task runner also applies it before its commands. Git's `.gitignore` controls repository contents; Dropbox uses the separate `com.dropbox.ignored` directory marker.
+
 ## Lessons
 
 | Tutorial | Lesson | Notebook |
