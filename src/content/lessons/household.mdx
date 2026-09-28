@@ -1,0 +1,73 @@
+import HouseholdExplorer from '../../components/HouseholdExplorer.svelte';
+import Question from '../../components/Question.astro';
+
+## The intuition
+
+A household can choose its initial consumption, but it cannot choose that number independently of its lifetime resources. A small initial mistake gets carried forward by the consumption growth rule. Over many years, that mistake changes the wealth path dramatically.
+
+Choosing too much consumption eventually requires ever more borrowing. Choosing too little leaves resources unused. The optimal initial choice lies between these failures.
+
+The subtle point is that **wealth itself need not approach zero**. The terminal condition concerns wealth measured in present-value units. A growing asset stock can have a shrinking present value when it grows more slowly than the interest rate.
+
+## The model
+
+Let $a$ denote assets and $c$ consumption. With a constant wage $w$ and interest rate $r$,
+
+$$
+\dot a=ra+w-c,\qquad \dot c=gc,\qquad g=\frac{r-\rho}{\sigma}.
+$$
+
+Here $\rho$ is the rate of time preference and $\sigma$ the inverse intertemporal elasticity of substitution. In the experiment, $r=0.05$ and $g=0.01$, so consumption grows at one percent per year.
+
+Discounting the asset equation and integrating gives the lifetime budget relation:
+
+$$
+\int_0^\infty e^{-rt}c(t)\,dt=a_0+\frac{w}{r},
+\qquad c(t)=c_0e^{gt}.
+$$
+
+For $r>g$, the optimal initial consumption is therefore
+
+$$
+c_0^*=(r-g)\left(a_0+\frac{w}{r}\right).
+$$
+
+The no-Ponzi restriction rules out an indefinitely growing discounted debt. With these preferences and an interior optimum, the household also leaves no valuable lifetime resources unused: $\lim_{t\to\infty}e^{-rt}a(t)=0$.
+
+<Question question="If a(t) keeps increasing, must the terminal condition fail?">
+  <p>No. Compare its growth rate with the discount rate. What matters here is the limiting value of e⁻ʳᵗa(t), not the asset level on its own.</p>
+</Question>
+
+<h2 id="experiment">Explore the mechanism</h2>
+
+Start with consumption slightly below the optimum. Inspect discounted wealth, then switch to wealth in levels. Finally move the guess just above the optimum and look for the zero-asset event.
+
+<HouseholdExplorer client:load />
+
+## Why a tiny mistake becomes visible
+
+The asset path can be written as
+
+$$
+a(t)=-\frac{w}{r}+\frac{c_0}{r-g}e^{gt}
++\underbrace{\left(a_0+\frac{w}{r}-\frac{c_0}{r-g}\right)}_{\text{initial budget mismatch}}e^{rt}.
+$$
+
+At the optimal choice, the coefficient of $e^{rt}$ is zero. A guess below the optimum makes it positive; a guess above makes it negative. This fast-growing component is why an apparently small error in $c_0$ eventually dominates the simulation.
+
+## The next code step
+
+The numerical solver tracks both variables in a consistent order:
+
+```python
+def rhs(t, state):
+    assets, consumption = state
+    return [r * assets + wage - consumption,
+            g * consumption]
+```
+
+An event function can stop the calculation when assets hit zero. That event is a useful diagnostic for an overly high guess in this example. Underconsumption instead needs a discounted-wealth check or a sufficiently long horizon.
+
+## What to take away
+
+Inspect the economically relevant quantity before judging a numerical path. An upward wealth curve is not enough to identify a terminal-condition failure. Discounting exposes the lifetime budget mismatch.

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+.cache/
+.verification/
+.pnpm-store/
+.pages-publish/
+*.log
+.env

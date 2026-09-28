@@ -1,0 +1,33 @@
+---
+import '../styles/global.css';
+import { withBase } from '../lib/lessons.js';
+interface Props { title?: string; description?: string; }
+const courseTitle = 'IB PhD Macroeconomics 1';
+const { title = courseTitle, description = 'Interactive models, written intuition and Python tutorials for IB PhD Macroeconomics 1.' } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f7f5f0" />
+    <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
+    <title>{title === courseTitle ? title : `${title} · ${courseTitle}`}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="wordmark" href={withBase()} aria-label={courseTitle}><span class="monogram" aria-hidden="true">M</span><span class="brand-full">{courseTitle}</span><span class="brand-short" aria-hidden="true">Macroeconomics 1</span></a>
+        <nav class="header-nav" aria-label="Main navigation">
+          <a href={withBase('#tutorials')}>Tutorials</a>
+          <a href={withBase('#notebooks')}>Notebooks</a>
+          <a class="author-link" href="https://github.com/adityapolisetty">Aditya Polisetty ↗</a>
+        </nav>
+      </div>
+    </header>
+    <slot />
+    <footer class="site-footer"><span>IB PhD Macroeconomics 1 · Tutorial companion</span><span>Aditya Polisetty</span></footer>
+  </body>
+</html>

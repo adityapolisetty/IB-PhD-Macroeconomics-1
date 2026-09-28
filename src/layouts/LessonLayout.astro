@@ -1,0 +1,39 @@
+---
+import SiteLayout from './SiteLayout.astro';
+import { lessons, withBase } from '../lib/lessons.js';
+const { lesson } = Astro.props;
+const index = lessons.findIndex(l => l.slug === lesson.slug);
+const previous = lessons[index - 1], next = lessons[index + 1];
+---
+<SiteLayout title={lesson.title} description={lesson.description}>
+  <div class="course-shell">
+    <aside class="course-sidebar">
+      <p class="eyebrow">Explore the models</p>
+      <nav aria-label="Tutorials">
+        {lessons.map(l => <a href={withBase(`tutorials/${l.slug}/`)} aria-current={l.slug === lesson.slug ? 'page' : undefined}><span>{String(l.number).padStart(2, '0')}</span>{l.short}</a>)}
+      </nav>
+      <p class="sidebar-note">Read the intuition.<br />Make a prediction.<br />Then change one thing.</p>
+    </aside>
+    <main class="lesson" id="main">
+      <details class="mobile-menu"><summary>Tutorial {lesson.number} · All tutorials</summary><nav aria-label="Tutorials on mobile">{lessons.map(l => <a href={withBase(`tutorials/${l.slug}/`)} aria-current={l.slug === lesson.slug ? 'page' : undefined}>{String(l.number).padStart(2, '0')} &nbsp; {l.short}</a>)}</nav></details>
+      <header class="lesson-header">
+        <p class="eyebrow">Tutorial {String(lesson.number).padStart(2, '0')} &nbsp; / &nbsp; {lesson.topic}</p>
+        <h1>{lesson.title}</h1>
+        <p class="lede">{lesson.question} {lesson.description}</p>
+        <div class="lesson-meta"><a href="#experiment">Explore the model ↓</a><a href={withBase(`notebooks/Tutorial_${lesson.number}.ipynb`)} download>Download notebook ↗</a></div>
+      </header>
+      <div class="prose"><slot /></div>
+      <section class="notebook-callout" id="notebook">
+        <p class="eyebrow">From intuition to Python</p>
+        <h2>Work through the notebook</h2>
+        <p>Continue with the class notebook: short code cells alternate with explanations and equations. Run one cell, inspect its output, and make a prediction before the next.</p>
+        <a class="button primary" href={withBase(`notebooks/Tutorial_${lesson.number}.ipynb`)} download>Download Tutorial {lesson.number} &nbsp; ↓</a>
+        <p class="chart-footnote">Python 3 with NumPy, Matplotlib and SciPy. Reference script: <code>{lesson.source}</code>.</p>
+      </section>
+      <nav class="lesson-pagination" aria-label="Adjacent tutorials">
+        {previous ? <a href={withBase(`tutorials/${previous.slug}/`)}><span>← Previous · Tutorial {previous.number}</span>{previous.short}</a> : <a href={withBase()}><span>← Course overview</span>All tutorials</a>}
+        {next ? <a href={withBase(`tutorials/${next.slug}/`)}><span>Next · Tutorial {next.number} →</span>{next.short}</a> : <a href={withBase()}><span>Course overview →</span>All tutorials</a>}
+      </nav>
+    </main>
+  </div>
+</SiteLayout>

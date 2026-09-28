@@ -1,0 +1,69 @@
+import SolowExplorer from '../../components/SolowExplorer.svelte';
+import Question from '../../components/Question.astro';
+
+## The intuition
+
+Every year, an economy saves some of its output and loses some effective capital through depreciation and population growth. The difference determines whether capital per worker rises or falls.
+
+The key force is **diminishing returns**. More capital produces more output, but each additional unit adds less than the previous one. Saving therefore rises more slowly than the amount needed to maintain a larger capital stock. Eventually the two flows balance.
+
+> A steady state is a balance of flows. Investment continues even when capital per worker stops changing.
+
+## The model
+
+With output per worker $y=Ak^\alpha$, the law of motion is
+
+$$
+\dot{k}=\underbrace{sAk^\alpha}_{\text{saving}}-\underbrace{(\delta+n)k}_{\text{effective depreciation}}.
+$$
+
+Here $k$ is capital per worker, $s$ the saving rate, $A$ productivity, $\alpha\in(0,1)$ the capital elasticity, $\delta$ depreciation and $n$ population growth. There is no technological growth in this example.
+
+The positive steady state solves $\dot k=0$:
+
+$$
+k^*=\left(\frac{sA}{\delta+n}\right)^{\!1/(1-\alpha)}.
+$$
+
+Below $k^*$, saving exceeds effective depreciation. Above $k^*$, the ranking reverses. Changing the initial condition changes the journey; changing the saving rate changes the destination.
+
+<Question question="If the saving rate increases, does capital jump immediately to its new steady state?">
+  <p>No. The existing capital stock is predetermined. Higher saving immediately changes the rate of accumulation, and capital then moves gradually toward the higher steady state.</p>
+</Question>
+
+<h2 id="experiment">Explore the mechanism</h2>
+
+First move initial capital from below to above the steady state. Then hold initial capital fixed and increase saving. Switch to the flow diagram to explain each movement using the gap between saving and depreciation.
+
+<SolowExplorer client:load />
+
+## Take one numerical step
+
+For a short interval $\Delta t$, Euler's method turns a derivative into a change:
+
+$$
+k_{t+\Delta t}\approx k_t+\Delta t\,[sAk_t^\alpha-(\delta+n)k_t].
+$$
+
+```python
+change = s * A * k**alpha - (delta + n) * k
+k_next = k + dt * change
+```
+
+The whole simulation repeats those two lines, using the updated state each time. In the experiment, reduce the time step and compare the Euler path with the exact path. Their agreement is a numerical check, separate from the economic claim that capital converges.
+
+## What to take away
+
+Higher saving raises the steady-state **level** of output per worker in this model. Without technological growth, output per worker stops growing once the new steady state is reached. Faster growth during the transition is not a permanently higher growth rate.
+
+Near the steady state, the derivative of the accumulation function is negative:
+
+$$
+g'(k^*)=-(1-\alpha)(\delta+n).
+$$
+
+This gives the speed of local convergence. Far from the steady state, the full nonlinear law of motion matters.
+
+<Question question="At the steady state, is saving zero?">
+  <p>Saving is positive and exactly offsets effective depreciation. Zero net accumulation does not mean zero gross investment.</p>
+</Question>

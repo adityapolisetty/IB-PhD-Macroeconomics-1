@@ -1,0 +1,22 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { lessons, withBase } from '../lib/lessons.js';
+---
+<SiteLayout>
+  <main class="home" id="main">
+    <section class="home-intro">
+      <div><p class="eyebrow">IB PhD / Course companion</p><h1>Macroeconomics 1</h1></div>
+      <div class="intro-copy"><p>Explore the mechanisms behind the models. Each tutorial brings together economic intuition, equations, an interactive experiment and a Python notebook.</p></div>
+    </section>
+    <section id="tutorials" aria-labelledby="directory-title">
+      <div class="directory-heading"><h2 id="directory-title">The tutorials</h2><span>Seven models to explore</span></div>
+      {lessons.map(lesson => <a class="lesson-row" href={withBase(`tutorials/${lesson.slug}/`)}><span class="number">{String(lesson.number).padStart(2, '0')}</span><div><h3>{lesson.title}</h3><p>{lesson.description}</p></div><span class="topic">{lesson.topic}</span><span class="arrow" aria-hidden="true">↗</span></a>)}
+      <p class="home-note">Tutorial numbering follows the course plan. Tutorials 4, 5 and 8 have no Python section.</p>
+    </section>
+    <section class="notebook-index" id="notebooks" aria-labelledby="notebooks-title">
+      <p class="eyebrow">For the classroom</p><h2 id="notebooks-title">The Python notebooks</h2>
+      <p>Concepts and small code steps, ready to run from top to bottom in Jupyter.</p>
+      <div class="notebook-links">{lessons.map(l => <a href={withBase(`notebooks/Tutorial_${l.number}.ipynb`)} download>Tutorial {l.number} ↓</a>)}</div>
+    </section>
+  </main>
+</SiteLayout>

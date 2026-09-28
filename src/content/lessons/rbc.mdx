@@ -1,0 +1,71 @@
+import RbcExplorer from '../../components/RbcExplorer.svelte';
+import Question from '../../components/Question.astro';
+
+## The intuition
+
+A numerical decision rule can follow the curvature of a model across its state space. A first-order approximation describes the model locally, using a linear rule around the steady state. Close to that point, the two can agree remarkably well.
+
+The useful experiment is to give both rules the **same shock** and the same initial capital, then enlarge the shock. Differences in their paths then reflect differences in the decision rules, rather than differences in the realised productivity sequence.
+
+## The model
+
+The RBC household chooses consumption $C$, hours $N$ and next-period capital $K'$ subject to
+
+$$
+C+K'=ZK^\alpha N^{1-\alpha}+(1-\delta)K.
+$$
+
+Productivity evolves according to
+
+$$
+\log Z_{t+1}=\rho\log Z_t+\sigma\varepsilon_{t+1},
+\qquad \varepsilon_{t+1}\sim\mathcal N(0,1).
+$$
+
+The discount factor is $\beta$, $\alpha$ is the capital share, $\delta$ depreciation, $\rho$ productivity persistence and $\sigma$ the standard deviation of productivity innovations. The model also values leisure; labor supply and consumption are chosen jointly with saving.
+
+The numerical solution supplies a policy $K'=g(K,Z)$. The log-linear solution uses hats for log deviations from the steady state:
+
+$$
+\hat k_{t+1}=a_k\hat k_t+a_z\hat z_t,\qquad
+\hat k_t=\log(K_t/\bar K).
+$$
+
+This is a linear rule in **log deviations**. Converting its path back to capital levels uses $K_t=\bar K e^{\hat k_t}$.
+
+<Question question="If both paths differ, could that simply be because one received a larger productivity shock?">
+  <p>That would make the comparison uninformative. Here the productivity path is deliberately identical under both rules, and both start at steady-state capital.</p>
+</Question>
+
+<h2 id="experiment">Explore the mechanism</h2>
+
+Start with the one-percent log-productivity shock. Increase its size while keeping everything else fixed. The plot shows capital relative to the steady state; the reported gap compares the two capital levels directly.
+
+<RbcExplorer client:load />
+
+## One shared shock path
+
+For this impulse experiment, the initial log-productivity innovation is $\epsilon_0$ and later innovations are zero:
+
+$$
+\hat z_t=\rho^t\epsilon_0.
+$$
+
+```python
+log_productivity = initial_shock * rho**t
+next_log_capital = a_k * log_capital + a_z * log_productivity
+```
+
+The numerical simulation receives that same productivity level and applies its own capital policy. Each rule updates from the capital it generated in the preceding period.
+
+## What the comparison tells us
+
+As the shock grows, the economy moves farther from the point at which the linear rule was derived. Curvature in the numerical policy becomes more important. The largest shock is a deliberate stress test, many innovation standard deviations from a typical shock in this calibration.
+
+A small discrepancy for ordinary shocks supports using the local approximation for the question being asked. It does not guarantee accuracy for large shocks or every statistic.
+
+## What it does not isolate
+
+A first-order approximation is certainty equivalent: its coefficients do not capture how shock variance changes decisions through risk. The numerical policy solves the stochastic model, so its differences can include risk effects and numerical approximation error as well as curvature.
+
+Holding the realised path fixed and increasing its size primarily illustrates the loss of local accuracy. Identifying precautionary saving separately would require an experiment that varies uncertainty, or a higher-order solution.

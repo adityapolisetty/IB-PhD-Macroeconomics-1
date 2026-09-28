@@ -1,0 +1,6 @@
+storeDir: .pnpm-store
+cacheDir: .cache/pnpm
+updateNotifier: false
+allowBuilds:
+  esbuild: true
+  sharp: true

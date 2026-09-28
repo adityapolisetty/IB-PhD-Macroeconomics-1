@@ -1,0 +1,4 @@
+---
+const { question } = Astro.props;
+---
+<aside class="question"><p class="eyebrow">Pause & predict</p><p>{question}</p><details><summary>Discuss the answer</summary><div class="answer"><slot /></div></details></aside>

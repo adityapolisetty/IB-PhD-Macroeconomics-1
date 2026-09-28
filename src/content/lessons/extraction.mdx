@@ -1,0 +1,66 @@
+import ExtractionExplorer from '../../components/ExtractionExplorer.svelte';
+import Question from '../../components/Question.astro';
+
+## The intuition
+
+A resource owner trades revenue today against the option to sell the remaining stock later. Today's price matters, and so does the distribution of tomorrow's price.
+
+Now imagine doubling the stock and doubling extraction. If every payoff doubles as well, scale changes the size of the problem without changing its proportions. The optimal **extraction fraction** can stay the same at every stock level.
+
+An additional quadratic capacity cost changes this argument. Doubling extraction quadruples that cost. Proportional extraction becomes more expensive for a larger owner, so stock size matters for the optimal fraction.
+
+## The model
+
+The state is remaining stock $S$ and current price $p$. The owner chooses extraction $q$:
+
+$$
+V(S,p)=\max_{0\le q<S}\left\{
+pq-\frac{q^2}{S}-\kappa q^2
++\beta\,\mathbb E[V(S-q,p')\mid p]
+\right\}.
+$$
+
+The first cost depends on extraction relative to available stock. The second, governed by $\kappa$, is a capacity cost. The discount factor is $\beta$; tomorrow's price $p'$ follows a persistent stochastic process. At zero stock, no extraction is possible and $V(0,p)=0$.
+
+## The scaling argument
+
+With $\kappa=0$, replacing $(S,q)$ by $(\lambda S,\lambda q)$ multiplies revenue, extraction cost and next stock by $\lambda$:
+
+$$
+\frac{(\lambda q)^2}{\lambda S}=\lambda\frac{q^2}{S}.
+$$
+
+This homogeneity lets us write $V(S,p)=S\,a(p)$ and $q=xS$. Dividing the Bellman equation by $S$ leaves a problem that does not depend on stock:
+
+$$
+a(p)=\max_{0\le x<1}\left\{
+px-x^2+\beta(1-x)\mathbb E[a(p')\mid p]
+\right\}.
+$$
+
+If $\kappa>0$, dividing the extra term by $S$ instead gives $\kappa x^2S$. Stock remains in the objective and the simplification disappears.
+
+<Question question="With no capacity cost, does a flat q/S curve mean every owner extracts the same amount?">
+  <p>No. The same fraction applied to a larger stock gives a larger quantity. Scale independence concerns the fraction, not the level of extraction.</p>
+</Question>
+
+<h2 id="experiment">Explore the mechanism</h2>
+
+Set capacity cost to zero and compare stocks. Add capacity cost while holding today's price fixed. Then change the price and discuss both the incentive to sell now and the value of waiting.
+
+<ExtractionExplorer client:load />
+
+## A small expected-value step
+
+On a stock-by-price grid, each row of the transition matrix $P$ is a conditional distribution of tomorrow's price. The continuation-value calculation is
+
+```python
+expected_value = value @ transition.T
+next_stock = stock - extraction
+```
+
+The second line usually lands between stock nodes, so the solver interpolates. Including the zero-stock boundary prevents numerical truncation from being mistaken for a failure of homogeneity.
+
+## What to take away
+
+A scaling argument can remove a state variable before computation begins. When a new cost has a different degree of homogeneity, that shortcut may fail. The plot tests the economic argument; the grid and boundary conditions determine how accurately the numerical calculation reproduces it.

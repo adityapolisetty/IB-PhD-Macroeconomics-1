@@ -1,0 +1,11 @@
+---
+import LessonLayout from '../../layouts/LessonLayout.astro';
+import { lessons } from '../../lib/lessons.js';
+export async function getStaticPaths() {
+  const modules = import.meta.glob('../../content/lessons/*.mdx', { eager: true });
+  return lessons.map(lesson => ({ params: { slug: lesson.slug }, props: { lesson, module: modules[`../../content/lessons/${lesson.slug}.mdx`] } }));
+}
+const { lesson, module } = Astro.props;
+const Content = module.Content;
+---
+<LessonLayout lesson={lesson}><Content /></LessonLayout>

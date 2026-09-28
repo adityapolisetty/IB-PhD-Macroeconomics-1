@@ -1,0 +1,66 @@
+import BellmanExplorer from '../../components/BellmanExplorer.svelte';
+import Question from '../../components/Question.astro';
+
+## The intuition
+
+Saving today sacrifices current consumption and creates resources for tomorrow. To decide how much to save, a household needs a measure of what those future resources are worth.
+
+A value function provides that measure. It records the best attainable lifetime utility from each current state. The Bellman equation splits that lifetime problem into **today's payoff plus the value of tomorrow's state**.
+
+Value function iteration starts with a guess about the future, solves today's problem given that guess, and uses the result as a better guess. One update is just a comparison of numbers.
+
+## The model
+
+For a discrete-time economy with logarithmic utility,
+
+$$
+V(k)=\max_{k'}\left\{
+\log\!\left(Ak^\alpha+(1-\delta)k-k'\right)+\beta V(k')
+\right\}.
+$$
+
+The state is current capital $k$ and the control is next-period capital $k'$. Productivity $A$, capital elasticity $\alpha$ and depreciation $\delta$ determine available resources. The discount factor $\beta\in(0,1)$ weights future utility.
+
+Consumption must be positive:
+
+$$
+c(k,k')=Ak^\alpha+(1-\delta)k-k'>0.
+$$
+
+A grid turns the maximisation into a matrix. Each row fixes today's capital. Each column tries a possible next-period capital stock. Infeasible cells receive $-\infty$, so they can never win.
+
+<Question question="Starting from V₀ = 0, which feasible column should win each row?">
+  <p>The lowest next-period capital on the grid. With no continuation value, the comparison rewards only current consumption. Future value begins to affect the choice in later updates.</p>
+</Question>
+
+<h2 id="experiment">Read one Bellman update</h2>
+
+Choose a row. Compare its candidate values and identify the maximum. Apply the update, then inspect how the continuation values change the next comparison. An outline marks the best column in each row; the selected row is shaded.
+
+<BellmanExplorer client:load />
+
+## The code behind one update
+
+Given a flow-utility matrix and a current value vector,
+
+```python
+candidates = flow_utility + beta * value[None, :]
+new_value = candidates.max(axis=1)
+policy_index = candidates.argmax(axis=1)
+```
+
+Continuation value depends on the **column's next state**, so the same value vector is added to every row. The maximum returns a value; the maximising column returns a policy. These are different objects.
+
+## When to stop
+
+For this finite-grid discounted problem, the Bellman operator is a contraction. A common diagnostic is the largest update:
+
+$$
+d_j=\|V_{j+1}-V_j\|_\infty.
+$$
+
+The Bellman residual bounds the error in the current value function by $d_j/(1-\beta)$. A small residual verifies convergence of the grid problem. It does not remove approximation error from a coarse grid.
+
+## What to take away
+
+Iteration improves the estimate of future value. The economic decision always remains the same: compare current consumption with the discounted value of what is saved. The five-node experiment makes that comparison readable; the class notebook increases the grid resolution.

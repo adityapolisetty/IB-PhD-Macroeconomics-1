@@ -1,0 +1,61 @@
+import ShootingExplorer from '../../components/ShootingExplorer.svelte';
+import Question from '../../components/Question.astro';
+
+## The intuition
+
+Initial capital is inherited. Initial consumption is chosen. A household that consumes too much uses up the economy's capital; one that consumes too little accumulates capital while sacrificing consumption. Equilibrium requires a particular initial consumption choice that takes the economy toward its steady state.
+
+This is a **saddle path**. Convergence occurs along a narrow set of initial choices. Nearby guesses can initially look similar and later move apart. That makes a phase diagram useful, and makes unrestricted forward simulation numerically delicate.
+
+## The model
+
+The resource constraint and Euler equation give two laws of motion:
+
+$$
+\dot k=Ak^\alpha-c-\delta k,
+\qquad
+\frac{\dot c}{c}=\frac{\alpha Ak^{\alpha-1}-\delta-\rho}{\sigma}.
+$$
+
+Capital $k$ and consumption $c$ are per worker. Productivity is $A$, depreciation is $\delta$, impatience is $\rho$, and $\sigma$ controls the willingness to substitute consumption across time. Population is constant in this example.
+
+The **capital nullcline** is $c=Ak^\alpha-\delta k$: capital does not change along this curve. Below it, capital rises; above it, capital falls. The **consumption nullcline** is the vertical line
+
+$$
+k^*=\left(\frac{\alpha A}{\delta+\rho}\right)^{1/(1-\alpha)}.
+$$
+
+To its left, consumption rises; to its right, consumption falls. Their intersection is $(k^*,c^*)$.
+
+<Question question="Why can we choose c₀ but not k₀ when finding the equilibrium path?">
+  <p>Capital is a state inherited from the past. Consumption is a control chosen now. The initial consumption choice must respect both the initial capital stock and the long-run equilibrium condition.</p>
+</Question>
+
+<h2 id="experiment">Explore the mechanism</h2>
+
+Try a low consumption guess and a high one. Then click the bisection button: test the midpoint, classify the failure, and keep the half of the bracket that still contains opposite failures. The slider can inspect any guess; it does not change the bisection bracket.
+
+<ShootingExplorer client:load />
+
+## One step of shooting
+
+Once the endpoints fail in opposite ways, the next numerical step is small:
+
+```python
+midpoint = (low + high) / 2
+failure = classify_path(midpoint)
+```
+
+If the midpoint drains capital, lower the upper endpoint. If it overaccumulates capital and consumption vanishes, raise the lower endpoint. Repeat the same test on the smaller interval.
+
+The bracket is information about the **initial choice**. It is not a collection of feasible equilibrium trajectories.
+
+## Why the plotted horizon matters
+
+The stable path has an unstable direction nearby. Small errors from finite precision, integration or the initial guess can eventually push a simulated path into that direction. A trajectory that behaves well for a finite period is evidence about the guess; it is not proof of exact infinite-horizon convergence.
+
+Use the informative early part of the path to explain the economics, and use tolerances and opposite-failure brackets to explain the numerical method.
+
+<Question question="A trial path stays close to the steady state for a long time and then departs. Has the economic saddle path disappeared?">
+  <p>No. The numerical path may have picked up a small component in the unstable direction. Increasing accuracy extends the useful simulation horizon, but forward shooting remains sensitive.</p>
+</Question>

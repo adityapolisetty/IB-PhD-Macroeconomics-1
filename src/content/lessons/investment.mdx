@@ -1,0 +1,72 @@
+import InvestmentExplorer from '../../components/InvestmentExplorer.svelte';
+import Question from '../../components/Question.astro';
+
+## The intuition
+
+A plant may want more capital without wanting enough to justify an adjustment cost. Waiting lets the benefit of adjustment grow until it is worth paying that cost. The resulting policy has an **inaction region**: a range of states where doing nothing is optimal.
+
+A resale loss creates another reason to wait. A unit of capital costs one to buy but sells for less than one. A plant with excess capital may retain it rather than realise that loss immediately.
+
+These frictions affect different margins. A fixed cost discourages small adjustments in either direction. A lower resale price directly makes selling less attractive.
+
+## The model
+
+Current profit is $\pi(k,z)=zk^\nu$, where $k$ is capital, $z$ productivity and $\nu\in(0,1)$ captures diminishing returns. Productivity is persistent and stochastic. The discount factor is $\beta$, and capital depreciates at rate $\delta$.
+
+The plant compares two options:
+
+$$
+\begin{aligned}
+V_n(k,z)&=\pi(k,z)+\beta\mathbb E[V((1-\delta)k,z')\mid z],\\
+V_a(k,z)&=\max_{k'}\{(1-f)\pi(k,z)-C(i)+\beta\mathbb E[V(k',z')\mid z]\},\\
+V(k,z)&=\max\{V_n(k,z),V_a(k,z)\}.
+\end{aligned}
+$$
+
+Investment is $i=k'-(1-\delta)k$. Its transaction cost is
+
+$$
+C(i)=\begin{cases}i,&i\ge0,\\p_s i,&i<0.\end{cases}
+$$
+
+Here $p_s\le1$ is the resale price. Negative investment produces sale proceeds because $C(i)<0$. The fixed cost is a fraction $f$ of current profit, paid whenever the plant adjusts, independent of the adjustment's size.
+
+<Question question="If the plant does nothing, does its capital stock stay constant?">
+  <p>No. Zero investment means k′ = (1 − δ)k. Capital falls through depreciation. Maintaining the capital stock requires replacement investment, which counts as adjustment in this model.</p>
+</Question>
+
+<h2 id="experiment">Explore the mechanism</h2>
+
+First increase the fixed cost with the resale price held fixed. Look for the widening zero-investment band. Then hold the fixed cost fixed and lower the resale price. Track the threshold where the plant begins to sell.
+
+<InvestmentExplorer client:load />
+
+## One comparison in code
+
+At a given state, compute the best value with adjustment and the value without it:
+
+```python
+adjust = value_adjust > value_wait
+next_capital = best_choice if adjust else (1 - delta) * capital
+investment = next_capital - (1 - delta) * capital
+```
+
+The binary choice creates the inaction region. Conditional on adjustment, the plant still solves for the best size of the change. As a threshold is crossed, the chosen investment rate can jump.
+
+## Reading the horizontal axis
+
+Capital is divided by the user-cost benchmark
+
+$$
+k^b=\left(\frac{\nu z}{r+\delta}\right)^{1/(1-\nu)},\qquad r=\frac1\beta-1.
+$$
+
+This benchmark normalises the units. The full stochastic policy also depends on expected future productivity and the adjustment frictions; the benchmark alone does not determine it.
+
+## What to take away
+
+Doing nothing can be an active economic choice. The value of a small adjustment may not cover its cost. This generates waiting and occasional large changes, even while productivity and capital evolve continuously between decisions.
+
+<Question question="Can a resale loss create an inaction band even when the fixed cost is zero?">
+  <p>Yes. The gap between buying and selling prices creates different purchase and sale thresholds. The experiment isolates this by setting the fixed cost to zero while retaining a resale loss.</p>
+</Question>
