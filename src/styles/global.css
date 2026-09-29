@@ -40,11 +40,10 @@ h3 { font-size: 1.5rem; line-height: 1.3; }
 p { margin-bottom: 1.1em; }
 .eyebrow { font-size: .75rem; line-height: 1.4; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; color: var(--muted); }
 .site-header { border-bottom: 1px solid var(--rule); background: var(--paper); position: relative; z-index: 5; }
-.header-inner { max-width: var(--page-width); margin: 0 auto; padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.wordmark { display: flex; align-items: center; gap: 32px; text-decoration: none; font-family: var(--font-heading); font-size: 1.4rem; line-height: 1; }
+.header-inner { max-width: var(--page-width); margin: 0 auto; padding: 24px 32px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; }
+.wordmark { display: inline-flex; text-decoration: none; }
 .site-logo { display: block; width: 200px; height: auto; flex-shrink: 0; }
-.brand-short { display: none; }
-.header-nav { display: flex; align-items: center; gap: 30px; font-size: .875rem; }
+.header-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 30px; font-size: .875rem; }
 .header-nav a { text-decoration: none; }
 .skip-link { position: absolute; top: -100px; left: 24px; background: var(--ink); color: var(--paper); padding: 12px 18px; z-index: 100; }
 .skip-link:focus { top: 10px; }
@@ -134,7 +133,6 @@ select { background: transparent; color: var(--ink); border: 1px solid var(--rul
 .site-footer { max-width: var(--page-width); margin: 0 auto; padding: 24px 32px 35px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; gap: 25px; color: var(--muted); font-size: .8125rem; }
 @media (max-width: 1000px) {
   .course-shell { grid-template-columns: 190px minmax(0, 1fr); gap: 30px; }
-  .wordmark { flex-direction: column; align-items: flex-start; gap: 16px; }
   .site-logo { width: 180px; }
   .lesson-row { grid-template-columns: 54px 1fr 24px; }
   .lesson-row .topic { display: none; }
@@ -142,10 +140,8 @@ select { background: transparent; color: var(--ink); border: 1px solid var(--rul
 }
 @media (max-width: 760px) {
   .header-inner { padding: 20px 22px; }
-  .wordmark { font-size: 1.2rem; flex-direction: column; align-items: flex-start; gap: 16px; }
+  .header-inner { gap: 14px; }
   .site-logo { width: 145px; }
-  .brand-full { display: none; }
-  .brand-short { display: inline; }
   .header-nav { gap: 19px; font-size: .8125rem; }
   .header-nav .author-link { display: none; }
   .home { padding: 42px 22px; }
@@ -173,7 +169,6 @@ select { background: transparent; color: var(--ink); border: 1px solid var(--rul
   .controls { grid-template-columns: 1fr; }
   .home-intro h1 { font-size: clamp(2.5rem, 13vw, 3rem); }
   .header-inner { gap: 10px; }
-  .wordmark { font-size: 1.1rem; }
   .header-nav { gap: 14px; }
   .site-footer { display: block; }
 }
