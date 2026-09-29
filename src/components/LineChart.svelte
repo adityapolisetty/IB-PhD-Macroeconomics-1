@@ -17,7 +17,8 @@
   export let showLegend = true;
   export let interactive = true;
   let container, width = 720, hidden = [], hover = null, pinned = false;
-  const height = 350;
+  let height = 350;
+  $: height = Math.max(350, Math.min(760, Math.round(width / 2.8)));
   $: margin = { top: 30, right: 18, bottom: 61, left: width < 440 ? 62 : 72 };
   $: allPoints = series.flatMap(s => s.points).filter(p => Number.isFinite(p.x + p.y));
   $: xs = [...allPoints.map(p => p.x), ...references.filter(r => r.axis === 'x').map(r => r.value)];
@@ -103,9 +104,10 @@
   figure { margin: 0; width: 100%; }
   figcaption { font-family: var(--font-heading); font-size: 1.35rem; line-height: 1.4; margin-bottom: 10px; }
   .legend { display: flex; gap: 10px 23px; flex-wrap: wrap; margin-bottom: 7px; }
-  .legend button { background: none; border: 0; padding: 2px 0; font-size: .8125rem; display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
-  .legend button[aria-pressed='false'] { opacity: .4; }
-  .legend span { width: 20px; height: 0; border-top: 2px solid var(--series-color); }
+  .legend button { background: var(--accent); border: 1px solid var(--accent); padding: 4px 9px; font-size: .8125rem; display: inline-flex; align-items: center; gap: 8px; color: var(--paper); }
+  .legend button[aria-pressed='false'] { opacity: 1; text-decoration: line-through; }
+  .legend button:focus-visible { outline: 2px solid var(--paper); outline-offset: -4px; }
+  .legend span { width: 20px; height: 5px; background: var(--paper); border-top: 2px solid var(--series-color); }
   .legend .dash { border-top-style: dashed; }
   .chart-interaction { position: relative; }
   svg { display: block; overflow: visible; }
@@ -119,7 +121,7 @@
   .data-line { transition: d .22s ease; }
   .hover-guide { stroke: var(--muted); stroke-width: 1; opacity: .5; }
   .pointer-area { cursor: crosshair; touch-action: pan-y; }
-  .chart-tooltip { position: absolute; top: 28px; width: 215px; background: var(--paper); border: 1px solid var(--rule); padding: 10px 13px; font-size: .8125rem; line-height: 1.7; pointer-events: none; box-shadow: 0 4px 14px #2628240a; }
+  .chart-tooltip { position: absolute; top: 28px; width: 215px; background: var(--accent-soft); border: 1px solid var(--accent); padding: 10px 13px; font-size: .8125rem; line-height: 1.7; pointer-events: none; box-shadow: 0 4px 14px #2628240a; }
   .chart-tooltip > div { display: flex; gap: 10px; justify-content: space-between; }
   .chart-tooltip .tooltip-x { color: var(--muted); padding-bottom: 3px; }
   .chart-tooltip strong { font-weight: 500; font-variant-numeric: tabular-nums; }

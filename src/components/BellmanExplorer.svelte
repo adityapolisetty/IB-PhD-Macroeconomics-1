@@ -26,7 +26,7 @@
   .payoff-matrix td { background: var(--surface); }
   .payoff-matrix th { font-weight: 500; color: var(--muted); }
   .payoff-matrix td.best { border-color: var(--accent); }
-  .payoff-matrix .active td { background: var(--accent-soft); }
+  .payoff-matrix .active td { background: var(--accent-soft-strong); }
   .payoff-matrix .active th { color: var(--accent); }
   .payoff-matrix td.infeasible { background: transparent; color: var(--muted); }
   .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
