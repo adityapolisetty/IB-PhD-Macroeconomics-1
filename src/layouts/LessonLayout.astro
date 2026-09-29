@@ -23,13 +23,6 @@ const previous = lessons[index - 1], next = lessons[index + 1];
         <div class="lesson-meta"><a href="#experiment">Explore the model ↓</a><a href={withBase(`notebooks/Tutorial_${lesson.number}.ipynb`)} download>Download notebook ↗</a></div>
       </header>
       <div class="prose"><slot /></div>
-      <section class="notebook-callout" id="notebook">
-        <p class="eyebrow">From intuition to Python</p>
-        <h2>Work through the notebook</h2>
-        <p>Continue with the class notebook: short code cells alternate with explanations and equations. Run one cell, inspect its output, and make a prediction before the next.</p>
-        <a class="button primary" href={withBase(`notebooks/Tutorial_${lesson.number}.ipynb`)} download>Download Tutorial {lesson.number} &nbsp; ↓</a>
-        <p class="chart-footnote">Python 3 with NumPy, Matplotlib and SciPy. Reference script: <code>{lesson.source}</code>.</p>
-      </section>
       <nav class="lesson-pagination" aria-label="Adjacent tutorials">
         {previous ? <a href={withBase(`tutorials/${previous.slug}/`)}><span>← Previous · Tutorial {previous.number}</span>{previous.short}</a> : <a href={withBase()}><span>← Course overview</span>All tutorials</a>}
         {next ? <a href={withBase(`tutorials/${next.slug}/`)}><span>Next · Tutorial {next.number} →</span>{next.short}</a> : <a href={withBase()}><span>Course overview →</span>All tutorials</a>}
