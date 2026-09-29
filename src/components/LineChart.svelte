@@ -142,9 +142,28 @@
       <title>{title}</title><desc>{description || `${yLabel} against ${xLabel}.`}</desc>
       <defs><clipPath id={clipId}><rect x={margin.left} y={margin.top} width={width - margin.left - margin.right} height={height - margin.top - margin.bottom} /></clipPath></defs>
       {#each bands as band}<rect class="region" x={xScale(band.x0)} y={margin.top} width={Math.max(0, xScale(band.x1) - xScale(band.x0))} height={height - margin.bottom - margin.top} /><text class="region-label" x={(xScale(band.x0) + xScale(band.x1)) / 2} y={margin.top + 16} text-anchor="middle">{band.label}</text>{/each}
-      {#each yTicks as tick}<line class="grid" x1={margin.left} x2={width - margin.right} y1={yScale(tick)} y2={yScale(tick)} /><text class="tick" x={margin.left - 12} y={yScale(tick) + 4} text-anchor="end">{formatter(tick)}</text>{/each}
-      <line class="axis" x1={margin.left} x2={width - margin.right} y1={height - margin.bottom} y2={height - margin.bottom} />
-      {#each xTicks as tick}<line class="axis" x1={xScale(tick)} x2={xScale(tick)} y1={height - margin.bottom} y2={height - margin.bottom + 5} /><text class="tick" x={xScale(tick)} y={height - margin.bottom + 23} text-anchor={xScale(tick) > width - 35 ? 'end' : xScale(tick) < margin.left + 10 ? 'start' : 'middle'}>{formatter(tick)}</text>{/each}
+      {#each yTicks as tick}<line class="grid" class:scale-grid={Boolean(yScaleChange) && tick === yTicks.at(-1)} x1={margin.left} x2={width - margin.right} y1={yScale(tick)} y2={yScale(tick)} /><text class="tick" class:scale-tick={Boolean(yScaleChange) && tick === yTicks.at(-1)} x={margin.left - 12} y={yScale(tick) + 4} text-anchor="end">{formatter(tick)}</text>{/each}
+      <line class="axis" class:axis-active={Boolean(yScaleChange)} x1={margin.left} x2={margin.left} y1={margin.top} y2={height - margin.bottom} />
+      <line class="axis" class:axis-active={Boolean(xScaleChange)} x1={margin.left} x2={width - margin.right} y1={height - margin.bottom} y2={height - margin.bottom} />
+      {#each xTicks as tick}<line class="axis" x1={xScale(tick)} x2={xScale(tick)} y1={height - margin.bottom} y2={height - margin.bottom + 5} /><text class="tick" class:scale-tick={Boolean(xScaleChange) && tick === xTicks.at(-1)} x={xScale(tick)} y={height - margin.bottom + 23} text-anchor={xScale(tick) > width - 35 ? 'end' : xScale(tick) < margin.left + 10 ? 'start' : 'middle'}>{formatter(tick)}</text>{/each}
+      {#if yScaleChange}
+        <g class="axis-marker" aria-hidden="true" transform={`translate(${margin.left + 7} ${margin.top + 8}) scale(1.5)`}>
+          <rect x="-3" y="-3" width="30" height="34" />
+          {#if yScaleChange === 'expanded'}<path d="M12 12V3m-4 4 4-4 4 4M12 16v9m-4-4 4 4 4-4" />
+          {:else if yScaleChange === 'narrowed'}<path d="M12 3v9m-4-4 4 4 4-4M12 25v-9m-4 4 4-4 4 4" />
+          {:else if yScaleChange === 'up'}<path d="M12 24V4m-5 5 5-5 5 5" />
+          {:else}<path d="M12 4v20m-5-5 5 5 5-5" />{/if}
+        </g>
+      {/if}
+      {#if xScaleChange}
+        <g class="axis-marker" aria-hidden="true" transform={`translate(${width - margin.right - 54} ${height - margin.bottom - 45}) scale(1.5)`}>
+          <rect x="-3" y="-3" width="34" height="30" />
+          {#if xScaleChange === 'expanded'}<path d="M12 12H3m4-4-4 4 4 4M16 12h9m-4-4 4 4-4 4" />
+          {:else if xScaleChange === 'narrowed'}<path d="M3 12h9m-4-4 4 4-4 4M25 12h-9m4-4-4 4 4 4" />
+          {:else if xScaleChange === 'right'}<path d="M4 12h20m-5-5 5 5-5 5" />
+          {:else}<path d="M24 12H4m5-5-5 5 5 5" />{/if}
+        </g>
+      {/if}
       <text class="axis-title" x={(margin.left + width - margin.right) / 2} y={height - 9} text-anchor="middle">{width < 440 && xLabelShort ? xLabelShort : xLabel}</text>
       <text class="axis-title" transform={`translate(16 ${(margin.top + height - margin.bottom) / 2}) rotate(-90)`} text-anchor="middle">{yLabel}</text>
       {#each references as r}
@@ -179,6 +198,11 @@
   .axis-title { font: 14px var(--font-body); fill: var(--ink); }
   .grid { stroke: var(--rule); stroke-width: .65; }
   .axis { stroke: var(--muted); stroke-width: .8; }
+  .axis-active { stroke: var(--accent); stroke-width: 2.5; }
+  .scale-grid { stroke: var(--accent); stroke-width: 1.2; }
+  .scale-tick { fill: var(--accent); font-weight: 700; }
+  .axis-marker rect { fill: var(--accent-soft-strong); stroke: var(--accent); stroke-width: 1.5; }
+  .axis-marker path { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
   .reference { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 5; opacity: .6; }
   .reference-label, .region-label { font: 13px var(--font-body); fill: var(--muted); paint-order: stroke; stroke: var(--paper); stroke-width: 4px; }
   .region { fill: var(--accent-soft); opacity: .7; }
