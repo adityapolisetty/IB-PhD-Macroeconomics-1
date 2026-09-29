@@ -17,6 +17,7 @@
   export let showLegend = true;
   export let interactive = true;
   let container, width = 720, hidden = [], hover = null, pinned = false;
+  let previousYAxis = null, scaleChange = null;
   let height = 350;
   $: height = Math.max(350, Math.min(760, Math.round(width / 2.8)));
   $: margin = { top: 30, right: 18, bottom: 61, left: width < 440 ? 62 : 72 };
@@ -28,6 +29,7 @@
   $: padding = Math.max((rawY[1] - rawY[0]) * .1, .02);
   $: xScale = (xType === 'log' ? scaleLog() : scaleLinear()).domain(xExtent[0] === xExtent[1] ? [xExtent[0], xExtent[0] + 1] : xExtent).range([margin.left, width - margin.right]);
   $: yScale = scaleLinear().domain(yDomain || [rawY[0] === 0 ? 0 : rawY[0] - padding, rawY[1] + padding]).nice(5).range([height - margin.bottom, margin.top]);
+  $: trackYAxis(yScale.domain(), yLabel);
   $: xTicks = chartTicks(xScale, xType, width);
   $: yTicks = yScale.ticks(5);
   $: drawLine = line().x(p => xScale(p.x)).y(p => yScale(p.y)).curve(curveLinear);
@@ -37,6 +39,22 @@
   $: clipId = `plot-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   $: if (series) { hover = null; pinned = false; }
   const formatter = v => Number.isInteger(v) ? String(v) : Math.abs(v) < .01 && v !== 0 ? v.toExponential(1) : Number(v.toFixed(2)).toString();
+  function trackYAxis(domain, label) {
+    const [min, max] = domain;
+    if (previousYAxis && previousYAxis.label === label) {
+      const oldSpan = previousYAxis.max - previousYAxis.min;
+      const newSpan = max - min;
+      const tolerance = Math.max(Math.abs(oldSpan), Math.abs(newSpan), 1) * 1e-9;
+      if (newSpan > oldSpan + tolerance) scaleChange = 'expanded';
+      else if (newSpan < oldSpan - tolerance) scaleChange = 'narrowed';
+      else if (min > previousYAxis.min + tolerance) scaleChange = 'up';
+      else if (min < previousYAxis.min - tolerance) scaleChange = 'down';
+      else scaleChange = null;
+    } else {
+      scaleChange = null;
+    }
+    previousYAxis = { min, max, label };
+  }
   function chartTicks(scale, type, availableWidth) {
     const limit = availableWidth < 440 ? 4 : 7;
     let ticks = type === 'log' ? scale.ticks(5).filter(v => [1, 2, 5].includes(Number((v / 10 ** Math.floor(Math.log10(v))).toFixed(8)))) : scale.ticks(availableWidth < 440 ? 3 : 6);
@@ -77,6 +95,22 @@
 <figure class="line-chart" bind:this={container} aria-label={title}>
   <figcaption>{title}</figcaption>
   {#if showLegend}<div class="legend" aria-label="Chart series">{#each series as s}<button type="button" aria-pressed={!hidden.includes(s.id)} on:click={() => toggle(s.id)}><span class:dash={s.dash} style={`--series-color: var(--${s.color || 'series-1'})`}></span>{s.label}</button>{/each}</div>{/if}
+  {#if scaleChange}
+    <div class="scale-cue" role="status" aria-live="polite">
+      <svg class="scale-cue-icon" viewBox="0 0 24 28" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        {#if scaleChange === 'expanded'}
+          <path d="M12 12V3m-4 4 4-4 4 4M12 16v9m-4-4 4 4 4-4" />
+        {:else if scaleChange === 'narrowed'}
+          <path d="M12 3v9m-4-4 4 4 4-4M12 25v-9m-4 4 4-4 4 4" />
+        {:else if scaleChange === 'up'}
+          <path d="M12 24V4m-5 5 5-5 5 5" />
+        {:else}
+          <path d="M12 4v20m-5-5 5 5 5-5" />
+        {/if}
+      </svg>
+      <span>Y-axis {scaleChange === 'expanded' ? 'range expanded' : scaleChange === 'narrowed' ? 'range narrowed' : scaleChange === 'up' ? 'shifted up' : 'shifted down'}</span>
+    </div>
+  {/if}
   <div class="chart-interaction" tabindex={interactive ? 0 : undefined} role="group" aria-label={`${title}.${interactive ? ' Use left and right arrows to inspect values. Escape clears the selection.' : ''}`} on:keydown={keyboard}>
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} role="img" aria-label={title}>
       <title>{title}</title><desc>{description || `${yLabel} against ${xLabel}.`}</desc>
@@ -109,6 +143,8 @@
   .legend button:focus-visible { outline: 2px solid var(--paper); outline-offset: -4px; }
   .legend span { width: 20px; height: 5px; background: var(--paper); border-top: 2px solid var(--series-color); }
   .legend .dash { border-top-style: dashed; }
+  .scale-cue { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; margin: 5px 0 8px; padding: 5px 14px 5px 8px; border-left: 3px solid var(--accent); background: var(--accent-soft-strong); color: var(--accent); font-size: .9375rem; font-weight: 600; line-height: 1.35; }
+  .scale-cue-icon { width: 29px; height: 34px; flex: none; }
   .chart-interaction { position: relative; }
   svg { display: block; overflow: visible; }
   .tick { font: 13px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
