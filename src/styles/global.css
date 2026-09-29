@@ -115,12 +115,12 @@ select { background: transparent; color: var(--ink); border: 1px solid var(--rul
 .segmented button[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
 .live-insight { font-size: .9375rem; line-height: 1.6; margin: 20px 0 0; padding-left: 15px; border-left: 2px solid var(--accent); }
 .chart-footnote { color: var(--muted); font-size: .8125rem; line-height: 1.6; margin: 15px 0 0; }
-.question { background: var(--accent); color: var(--paper); margin: 32px 0; padding: 23px 25px; }
-.question .eyebrow { margin-bottom: 9px; color: inherit; }
+.question { background: var(--accent-soft); color: var(--ink); border-left: 2px solid var(--accent); margin: 32px 0; padding: 23px 25px; }
+.question .eyebrow { margin-bottom: 9px; color: var(--accent); }
 .question p { margin-bottom: 12px; }
 .question details { font-size: .9375rem; }
 .question summary { cursor: pointer; color: inherit; }
-.question summary:focus-visible { outline-color: var(--paper); }
+.question summary:focus-visible { outline-color: var(--accent); }
 .question details[open] summary { margin-bottom: 12px; }
 .question .answer { color: inherit; }
 .lesson-pagination { display: flex; justify-content: space-between; gap: 25px; border-top: 1px solid var(--rule); margin-top: 50px; padding-top: 24px; font-size: .875rem; }
