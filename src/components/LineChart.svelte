@@ -17,7 +17,7 @@
   export let showLegend = true;
   export let interactive = true;
   let container, width = 720, hidden = [], hover = null, pinned = false;
-  let previousYAxis = null, scaleChange = null;
+  let previousXAxis = null, previousYAxis = null, xScaleChange = null, yScaleChange = null;
   let height = 350;
   $: height = Math.max(350, Math.min(760, Math.round(width / 2.8)));
   $: margin = { top: 30, right: 18, bottom: 61, left: width < 440 ? 62 : 72 };
@@ -29,7 +29,8 @@
   $: padding = Math.max((rawY[1] - rawY[0]) * .1, .02);
   $: xScale = (xType === 'log' ? scaleLog() : scaleLinear()).domain(xExtent[0] === xExtent[1] ? [xExtent[0], xExtent[0] + 1] : xExtent).range([margin.left, width - margin.right]);
   $: yScale = scaleLinear().domain(yDomain || [rawY[0] === 0 ? 0 : rawY[0] - padding, rawY[1] + padding]).nice(5).range([height - margin.bottom, margin.top]);
-  $: trackYAxis(yScale.domain(), yLabel);
+  $: trackAxis('x', xScale.domain(), xLabel, xType);
+  $: trackAxis('y', yScale.domain(), yLabel, 'linear');
   $: xTicks = chartTicks(xScale, xType, width);
   $: yTicks = yScale.ticks(5);
   $: drawLine = line().x(p => xScale(p.x)).y(p => yScale(p.y)).curve(curveLinear);
@@ -39,21 +40,26 @@
   $: clipId = `plot-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   $: if (series) { hover = null; pinned = false; }
   const formatter = v => Number.isInteger(v) ? String(v) : Math.abs(v) < .01 && v !== 0 ? v.toExponential(1) : Number(v.toFixed(2)).toString();
-  function trackYAxis(domain, label) {
-    const [min, max] = domain;
-    if (previousYAxis && previousYAxis.label === label) {
-      const oldSpan = previousYAxis.max - previousYAxis.min;
+  function trackAxis(axis, domain, label, type) {
+    const [min, max] = type === 'log' ? domain.map(Math.log) : domain;
+    const previous = axis === 'x' ? previousXAxis : previousYAxis;
+    let change = null;
+    if (previous && previous.label === label && previous.type === type) {
+      const oldSpan = previous.max - previous.min;
       const newSpan = max - min;
       const tolerance = Math.max(Math.abs(oldSpan), Math.abs(newSpan), 1) * 1e-9;
-      if (newSpan > oldSpan + tolerance) scaleChange = 'expanded';
-      else if (newSpan < oldSpan - tolerance) scaleChange = 'narrowed';
-      else if (min > previousYAxis.min + tolerance) scaleChange = 'up';
-      else if (min < previousYAxis.min - tolerance) scaleChange = 'down';
-      else scaleChange = null;
-    } else {
-      scaleChange = null;
+      if (newSpan > oldSpan + tolerance) change = 'expanded';
+      else if (newSpan < oldSpan - tolerance) change = 'narrowed';
+      else if (min > previous.min + tolerance) change = axis === 'x' ? 'right' : 'up';
+      else if (min < previous.min - tolerance) change = axis === 'x' ? 'left' : 'down';
     }
-    previousYAxis = { min, max, label };
+    if (axis === 'x') {
+      xScaleChange = change;
+      previousXAxis = { min, max, label, type };
+    } else {
+      yScaleChange = change;
+      previousYAxis = { min, max, label, type };
+    }
   }
   function chartTicks(scale, type, availableWidth) {
     const limit = availableWidth < 440 ? 4 : 7;
@@ -95,20 +101,40 @@
 <figure class="line-chart" bind:this={container} aria-label={title}>
   <figcaption>{title}</figcaption>
   {#if showLegend}<div class="legend" aria-label="Chart series">{#each series as s}<button type="button" aria-pressed={!hidden.includes(s.id)} on:click={() => toggle(s.id)}><span class:dash={s.dash} style={`--series-color: var(--${s.color || 'series-1'})`}></span>{s.label}</button>{/each}</div>{/if}
-  {#if scaleChange}
-    <div class="scale-cue" role="status" aria-live="polite">
-      <svg class="scale-cue-icon" viewBox="0 0 24 28" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        {#if scaleChange === 'expanded'}
-          <path d="M12 12V3m-4 4 4-4 4 4M12 16v9m-4-4 4 4 4-4" />
-        {:else if scaleChange === 'narrowed'}
-          <path d="M12 3v9m-4-4 4 4 4-4M12 25v-9m-4 4 4-4 4 4" />
-        {:else if scaleChange === 'up'}
-          <path d="M12 24V4m-5 5 5-5 5 5" />
-        {:else}
-          <path d="M12 4v20m-5-5 5 5 5-5" />
-        {/if}
-      </svg>
-      <span>Y-axis {scaleChange === 'expanded' ? 'range expanded' : scaleChange === 'narrowed' ? 'range narrowed' : scaleChange === 'up' ? 'shifted up' : 'shifted down'}</span>
+  {#if xScaleChange || yScaleChange}
+    <div class="scale-cues" role="status" aria-live="polite">
+      {#if xScaleChange}
+        <div class="scale-cue">
+          <svg class="scale-cue-icon horizontal" viewBox="0 0 28 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            {#if xScaleChange === 'expanded'}
+              <path d="M12 12H3m4-4-4 4 4 4M16 12h9m-4-4 4 4-4 4" />
+            {:else if xScaleChange === 'narrowed'}
+              <path d="M3 12h9m-4-4 4 4-4 4M25 12h-9m4-4-4 4 4 4" />
+            {:else if xScaleChange === 'right'}
+              <path d="M4 12h20m-5-5 5 5-5 5" />
+            {:else}
+              <path d="M24 12H4m5-5-5 5 5 5" />
+            {/if}
+          </svg>
+          <span>X-axis {xScaleChange === 'expanded' ? 'range expanded' : xScaleChange === 'narrowed' ? 'range narrowed' : xScaleChange === 'right' ? 'shifted right' : 'shifted left'}</span>
+        </div>
+      {/if}
+      {#if yScaleChange}
+        <div class="scale-cue">
+          <svg class="scale-cue-icon" viewBox="0 0 24 28" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            {#if yScaleChange === 'expanded'}
+              <path d="M12 12V3m-4 4 4-4 4 4M12 16v9m-4-4 4 4 4-4" />
+            {:else if yScaleChange === 'narrowed'}
+              <path d="M12 3v9m-4-4 4 4 4-4M12 25v-9m-4 4 4-4 4 4" />
+            {:else if yScaleChange === 'up'}
+              <path d="M12 24V4m-5 5 5-5 5 5" />
+            {:else}
+              <path d="M12 4v20m-5-5 5 5 5-5" />
+            {/if}
+          </svg>
+          <span>Y-axis {yScaleChange === 'expanded' ? 'range expanded' : yScaleChange === 'narrowed' ? 'range narrowed' : yScaleChange === 'up' ? 'shifted up' : 'shifted down'}</span>
+        </div>
+      {/if}
     </div>
   {/if}
   <div class="chart-interaction" tabindex={interactive ? 0 : undefined} role="group" aria-label={`${title}.${interactive ? ' Use left and right arrows to inspect values. Escape clears the selection.' : ''}`} on:keydown={keyboard}>
@@ -143,8 +169,10 @@
   .legend button:focus-visible { outline: 2px solid var(--paper); outline-offset: -4px; }
   .legend span { width: 20px; height: 5px; background: var(--paper); border-top: 2px solid var(--series-color); }
   .legend .dash { border-top-style: dashed; }
-  .scale-cue { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; margin: 5px 0 8px; padding: 5px 14px 5px 8px; border-left: 3px solid var(--accent); background: var(--accent-soft-strong); color: var(--accent); font-size: .9375rem; font-weight: 600; line-height: 1.35; }
+  .scale-cues { display: flex; flex-wrap: wrap; gap: 8px; margin: 5px 0 8px; }
+  .scale-cue { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 5px 14px 5px 8px; border-left: 3px solid var(--accent); background: var(--accent-soft-strong); color: var(--accent); font-size: .9375rem; font-weight: 600; line-height: 1.35; }
   .scale-cue-icon { width: 29px; height: 34px; flex: none; }
+  .scale-cue-icon.horizontal { width: 34px; height: 29px; }
   .chart-interaction { position: relative; }
   svg { display: block; overflow: visible; }
   .tick { font: 13px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
