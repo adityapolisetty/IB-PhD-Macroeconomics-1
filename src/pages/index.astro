@@ -9,9 +9,8 @@ import { lessons, withBase } from '../lib/lessons.js';
       <div class="intro-copy"><p>A tool to visualise concepts in macroeconomics and computation</p></div>
     </section>
     <section id="tutorials" aria-labelledby="directory-title">
-      <div class="directory-heading"><h2 id="directory-title">The tutorials</h2><span>Seven models to explore</span></div>
+      <div class="directory-heading"><h2 id="directory-title">The Solow model</h2><span>One model to explore</span></div>
       {lessons.map(lesson => <a class="lesson-row" href={withBase(`tutorials/${lesson.slug}/`)}><span class="number">{String(lesson.number).padStart(2, '0')}</span><div><h3>{lesson.title}</h3><p>{lesson.description}</p></div><span class="topic">{lesson.topic}</span><span class="arrow" aria-hidden="true">↗</span></a>)}
-      <p class="home-note">Tutorial numbering follows the course plan. Tutorials 4, 5 and 8 have no Python section.</p>
     </section>
     <section class="notebook-index" id="notebooks" aria-labelledby="notebooks-title">
       <p class="eyebrow">For the classroom</p><h2 id="notebooks-title">The Python notebooks</h2>

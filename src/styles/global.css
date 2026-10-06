@@ -123,6 +123,7 @@ select { background: var(--accent-soft); color: var(--ink); border: 1px solid va
 .question summary:focus-visible { outline-color: var(--accent); }
 .question details[open] summary { margin-bottom: 12px; }
 .question .answer { color: inherit; }
+.experiment, .question, .prose blockquote, .prose pre { max-width: 900px; margin-left: auto; margin-right: auto; }
 .lesson-pagination { display: flex; justify-content: space-between; gap: 25px; border-top: 1px solid var(--rule); margin-top: 50px; padding-top: 24px; font-size: .875rem; }
 .lesson-pagination a { max-width: 48%; text-decoration: none; }
 .lesson-pagination a:last-child { text-align: right; }

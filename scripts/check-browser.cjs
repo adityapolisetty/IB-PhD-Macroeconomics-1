@@ -9,8 +9,8 @@ process.env.TMP = process.env.TEMP;
 process.env.TMPDIR = process.env.TEMP;
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
 const base = (process.env.PREVIEW_URL || 'http://127.0.0.1:4321/').replace(/\/?$/, '/');
-const slugs = ['solow', 'household', 'saddle-path', 'bellman', 'extraction', 'investment', 'rbc'];
-const numbers = [1, 2, 3, 6, 7, 9, 10];
+const slugs = ['solow'];
+const numbers = [1];
 const errors = [];
 async function setRange(page, label, value) {
   await page.getByLabel(label, { exact: true }).evaluate((element, v) => {
@@ -50,7 +50,7 @@ async function checkLayout(page) {
     page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
     page.on('response', response => { if (response.status() >= 400 && response.url().startsWith(base)) errors.push(`${response.status()}: ${response.url()}`); });
     await page.goto(base, { waitUntil: 'networkidle' });
-    assert.equal(await page.locator('.lesson-row').count(), 7);
+    assert.equal(await page.locator('.lesson-row').count(), 1);
     await checkLayout(page);
     await page.screenshot({ path: path.join(output, 'home-desktop.png'), fullPage: true });
     for (let i = 0; i < slugs.length; i++) {
@@ -119,7 +119,7 @@ async function checkLayout(page) {
       console.log(`PASS ${slug}: controls, equations, notebook, desktop and mobile`);
     }
     assert.deepEqual(errors, [], 'Browser errors were reported');
-    fs.writeFileSync(path.join(output, 'browser-result.json'), JSON.stringify({ passed: true, lessons: 7, viewports: [1440, 360], errors }, null, 2));
-    console.log('All seven lessons passed browser verification.');
+    fs.writeFileSync(path.join(output, 'browser-result.json'), JSON.stringify({ passed: true, lessons: 1, viewports: [1440, 360], errors }, null, 2));
+    console.log('The Solow lesson passed browser verification.');
   } finally { await context.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
