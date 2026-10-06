@@ -1,6 +1,6 @@
 # Model data and numerical choices
 
-All seven Python scripts in the tutorial plan are copied into `reference-python/`, and the seven class notebooks are copied into `public/notebooks/`.
+All seven Python scripts in the tutorial plan are copied into `reference-python/`.
 
 ## Models calculated in the browser
 

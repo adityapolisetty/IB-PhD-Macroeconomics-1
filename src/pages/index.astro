@@ -12,10 +12,5 @@ import { lessons, withBase } from '../lib/lessons.js';
       <div class="directory-heading"><h2 id="directory-title">The Solow model</h2><span>One model to explore</span></div>
       {lessons.map(lesson => <a class="lesson-row" href={withBase(`tutorials/${lesson.slug}/`)}><span class="number">{String(lesson.number).padStart(2, '0')}</span><div><h3>{lesson.title}</h3><p>{lesson.description}</p></div><span class="topic">{lesson.topic}</span><span class="arrow" aria-hidden="true">↗</span></a>)}
     </section>
-    <section class="notebook-index" id="notebooks" aria-labelledby="notebooks-title">
-      <p class="eyebrow">For the classroom</p><h2 id="notebooks-title">The Python notebooks</h2>
-      <p>Concepts and small code steps, ready to run from top to bottom in Jupyter.</p>
-      <div class="notebook-links">{lessons.map(l => <a href={withBase(`notebooks/Tutorial_${l.number}.ipynb`)} download>Tutorial {l.number} ↓</a>)}</div>
-    </section>
   </main>
 </SiteLayout>

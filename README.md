@@ -65,7 +65,7 @@ Each lesson moves through intuition, model, a prediction, an experiment and inte
 
 ## Notebooks and reference scripts
 
-The seven notebooks are in `public/notebooks/` and remain available when this folder is cloned as a standalone repository. While working in the local AP course folder, builds refresh these copies from `../Tutorials/` when that folder is present. `reference-python/` holds copies of all seven Python scripts named in the tutorial plan; the originals are not modified.
+The site does not serve the notebooks; they live in `../Tutorials/` and are sent to students directly. `reference-python/` holds copies of all seven Python scripts named in the tutorial plan; the originals are not modified.
 
 ## Reproduce the precomputed models
 

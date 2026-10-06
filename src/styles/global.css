@@ -60,9 +60,6 @@ p { margin-bottom: 1.1em; }
 .lesson-row .arrow { transition: transform .2s; }
 .lesson-row:hover .arrow { transform: translateX(5px); }
 .home-note { margin: 26px 0 0; color: var(--muted); font-size: .875rem; }
-.notebook-index { padding: 66px 0 10px; }
-.notebook-index h2 { margin-bottom: 18px; }
-.notebook-links { display: flex; gap: 12px 24px; flex-wrap: wrap; font-size: .9375rem; }
 .course-shell { display: grid; grid-template-columns: 235px minmax(0, 1fr); padding: 44px 32px 76px; gap: 55px; }
 .course-sidebar { position: sticky; top: 30px; align-self: start; }
 .course-sidebar .eyebrow { margin: 0 0 21px; }

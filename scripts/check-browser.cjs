@@ -10,7 +10,6 @@ process.env.TMPDIR = process.env.TEMP;
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
 const base = (process.env.PREVIEW_URL || 'http://127.0.0.1:4321/').replace(/\/?$/, '/');
 const slugs = ['solow'];
-const numbers = [1];
 const errors = [];
 async function setRange(page, label, value) {
   await page.getByLabel(label, { exact: true }).evaluate((element, v) => {
@@ -61,9 +60,6 @@ async function checkLayout(page) {
       assert.equal(await page.locator('h1').count(), 1);
       assert.ok(await page.locator('.katex').count() > 2, `${slug}: equations not rendered`);
       assert.ok(await page.getByRole('heading', { name: 'The intuition', exact: true }).isVisible());
-      const notebook = await context.request.get(`${base}notebooks/Tutorial_${numbers[i]}.ipynb`);
-      assert.equal(notebook.status(), 200);
-      assert.ok((await notebook.json()).cells.length > 10);
       if (slug === 'solow') {
         const before = await page.locator('.live-insight').innerText();
         await setRange(page, 'Saving rate', .35);
@@ -116,7 +112,7 @@ async function checkLayout(page) {
       assert.ok(await page.locator('.mobile-menu nav').isVisible());
       await page.locator('.mobile-menu summary').click();
       await page.screenshot({ path: path.join(output, `${slug}-mobile.png`), fullPage: true });
-      console.log(`PASS ${slug}: controls, equations, notebook, desktop and mobile`);
+      console.log(`PASS ${slug}: controls, equations, desktop and mobile`);
     }
     assert.deepEqual(errors, [], 'Browser errors were reported');
     fs.writeFileSync(path.join(output, 'browser-result.json'), JSON.stringify({ passed: true, lessons: 1, viewports: [1440, 360], errors }, null, 2));
