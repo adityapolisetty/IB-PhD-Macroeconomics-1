@@ -183,7 +183,7 @@
   figure { margin: 0; width: 100%; }
   figcaption { font-family: var(--font-heading); font-size: 1.35rem; line-height: 1.4; margin-bottom: 10px; }
   .legend { display: flex; gap: 10px 23px; flex-wrap: wrap; margin-bottom: 7px; }
-  .legend button { background: var(--accent); border: 1px solid var(--accent); padding: 4px 9px; font-size: .8125rem; display: inline-flex; align-items: center; gap: 8px; color: var(--paper); }
+  .legend button { background: var(--ink); border: 1px solid var(--ink); padding: 4px 9px; font-size: .8125rem; display: inline-flex; align-items: center; gap: 8px; color: var(--paper); }
   .legend button[aria-pressed='false'] { opacity: 1; text-decoration: line-through; }
   .legend button:focus-visible { outline: 2px solid var(--paper); outline-offset: -4px; }
   .legend span { width: 20px; height: 5px; background: var(--paper); border-top: 2px solid var(--series-color); }

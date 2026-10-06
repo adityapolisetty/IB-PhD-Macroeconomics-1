@@ -14,7 +14,7 @@
   --accent: #0000cd;
   --accent-soft: #eeeeff;
   --accent-soft-strong: #dcdcff;
-  --series-1: #0000cd;
+  --series-1: var(--ink);
   --series-2: #426e7a;
   --series-3: #657345;
   --font-body: 'Source Sans Pro', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
@@ -78,7 +78,7 @@ p { margin-bottom: 1.1em; }
 .lesson-header .lede { color: var(--muted); font-size: 1.15rem; line-height: 1.6; margin-bottom: 24px; max-width: 806px; }
 .lesson-meta { display: flex; gap: 13px 25px; flex-wrap: wrap; align-items: center; font-size: .875rem; }
 .lesson-meta span { color: var(--muted); }
-.prose { padding-top: 32px; }
+.prose { padding-top: 32px; max-width: 90ch; }
 .prose h2 { margin: 45px 0 20px; scroll-margin-top: 30px; }
 .prose > h2:first-child { margin-top: 0; }
 .prose h3 { margin: 30px 0 15px; }
@@ -96,7 +96,7 @@ p { margin-bottom: 1.1em; }
 .prose table { width: 100%; border-collapse: collapse; font-size: .9375rem; margin: 23px 0; }
 .prose th, .prose td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--rule); vertical-align: top; }
 .prose th { font-weight: 600; background: var(--accent-soft); }
-.experiment { margin: 26px 0 38px; background: var(--accent-soft); border-left: 2px solid var(--accent); padding: clamp(14px, 2vw, 24px); }
+.experiment { margin: 26px 0 38px; }
 .experiment-title { font-size: .75rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; margin: 0 0 19px; color: var(--muted); }
 .controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 30px; padding: 3px 0 22px; }
 .controls label { display: grid; gap: 8px; font-size: .875rem; line-height: 1.5; }
@@ -105,12 +105,12 @@ p { margin-bottom: 1.1em; }
 input[type='range'] { accent-color: var(--accent); width: 100%; margin: 3px 0; }
 select { background: var(--accent-soft); color: var(--ink); border: 1px solid var(--accent); padding: 8px 10px; width: 100%; }
 .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin: 5px 0 20px; }
-.button { font-size: .875rem; border: 1px solid var(--accent); background: var(--accent); color: var(--paper); padding: 9px 16px; text-decoration: none; display: inline-flex; justify-content: center; align-items: center; gap: 9px; line-height: 1.5; }
-.button:hover { background: var(--accent); color: var(--paper); box-shadow: inset 0 -3px 0 var(--paper); }
+.button { font-size: .875rem; border: 1px solid var(--ink); background: var(--ink); color: var(--paper); padding: 9px 16px; text-decoration: none; display: inline-flex; justify-content: center; align-items: center; gap: 9px; line-height: 1.5; }
+.button:hover { background: var(--ink); color: var(--paper); box-shadow: inset 0 -3px 0 var(--paper); }
 .button.primary { font-weight: 600; }
 .button:focus-visible, .segmented button:focus-visible { outline: 2px solid var(--paper); outline-offset: -4px; }
-.segmented { display: inline-flex; gap: 0; border: 1px solid var(--accent); margin-bottom: 20px; flex-wrap: wrap; }
-.segmented button { font-size: .875rem; border: 0; padding: 8px 14px; background: var(--accent); color: var(--paper); }
+.segmented { display: inline-flex; gap: 0; border: 1px solid var(--ink); margin-bottom: 20px; flex-wrap: wrap; }
+.segmented button { font-size: .875rem; border: 0; padding: 8px 14px; background: var(--ink); color: var(--paper); }
 .segmented button + button { border-left: 1px solid var(--paper); }
 .segmented button[aria-pressed='true'] { box-shadow: inset 0 -3px 0 var(--paper); font-weight: 600; }
 .live-insight { background: var(--accent-soft); font-size: .9375rem; line-height: 1.6; margin: 20px 0 0; padding: 14px 16px; border-left: 2px solid var(--accent); }
@@ -123,7 +123,6 @@ select { background: var(--accent-soft); color: var(--ink); border: 1px solid va
 .question summary:focus-visible { outline-color: var(--accent); }
 .question details[open] summary { margin-bottom: 12px; }
 .question .answer { color: inherit; }
-.experiment, .question, .prose blockquote, .prose pre { max-width: 900px; margin-left: auto; margin-right: auto; }
 .lesson-pagination { display: flex; justify-content: space-between; gap: 25px; border-top: 1px solid var(--rule); margin-top: 50px; padding-top: 24px; font-size: .875rem; }
 .lesson-pagination a { max-width: 48%; text-decoration: none; }
 .lesson-pagination a:last-child { text-align: right; }
