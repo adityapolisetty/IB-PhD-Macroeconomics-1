@@ -1,0 +1,68 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import UtilityExplorer from '../components/UtilityExplorer.svelte';
+import { withBase } from '../lib/lessons.js';
+---
+
+<SiteLayout title="Utility functions" description="Explore common economic utility functions with slider-controlled Manim animations, marginal utility, extrema and indifference curves.">
+  <main class="utility-page" id="main">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href={withBase()}>Course home</a><span aria-hidden="true">/</span><span>Utility functions</span></nav>
+    <header class="utility-hero">
+      <div class="hero-main">
+        <p class="eyebrow">A visual field guide · interactive mathematics</p>
+        <h1>Utility functions,<br /><em>made visible.</em></h1>
+        <p class="hero-lede">What does a utility curve actually tell you? Scrub through Manim animations and watch a tangent move across the common functions economists use. Read the slope, curvature, domain and limits at the same time.</p>
+        <div class="hero-actions"><a class="hero-button" href="#one-good">Start exploring <span aria-hidden="true">↘</span></a><a class="text-link" href="#two-goods">Jump to two goods <span aria-hidden="true">→</span></a></div>
+      </div>
+      <div class="hero-aside" aria-label="Three questions to ask of every utility function"><span class="aside-title">Three questions to ask</span><ol><li><span>01</span><div>Where is it defined?<small>Check the domain and boundaries.</small></div></li><li><span>02</span><div>Which way does it slope?<small>The first derivative gives marginal utility.</small></div></li><li><span>03</span><div>Does that slope change?<small>The second derivative reveals curvature.</small></div></li></ol></div>
+    </header>
+
+    <UtilityExplorer client:load />
+
+    <section class="takeaways" aria-labelledby="takeaways-title">
+      <div><p class="eyebrow">The model connection</p><h2 id="takeaways-title">What these shapes do in economics</h2><p>Keep the geometry close to the equations. These are the three links that make the pictures useful when you solve a model.</p></div>
+      <div class="takeaway-cards">
+        <article><span>01 / marginal utility</span><h3>A slope is a value at the margin</h3><p>For an increasing utility function, <strong>u′(c) &gt; 0</strong>. When it is concave, <strong>u″(c) &lt; 0</strong>: the next unit still helps, but by less. The log and CRRA curves make that visible.</p></article>
+        <article><span>02 / optimal choice</span><h3>A peak has zero slope</h3><p>The quadratic example reaches its maximum where <strong>u′(c) = 0</strong>. A graph ending at the edge of the screen is not necessarily a mathematical maximum: inspect the domain and what happens beyond the plot.</p></article>
+        <article><span>03 / two goods</span><h3>Compare trade-offs with prices</h3><p>On a smooth indifference curve, the marginal rate of substitution is <strong>MU<sub>x</sub> / MU<sub>y</sub></strong>. At an interior optimum it equals the price ratio. A kink needs a separate check.</p></article>
+      </div>
+      <p class="ordinal-note"><strong>A subtle distinction.</strong> If you only rank bundles, a strictly increasing transformation of utility keeps the same preferences. The displayed utility number, and even its numerical slope, can change. In intertemporal or expected-utility models, the specified flow utility and its curvature matter for choices across dates or states.</p>
+    </section>
+  </main>
+</SiteLayout>
+
+<style>
+  .utility-page { max-width: 1450px; margin: 0 auto; padding: 0 40px 90px; }
+  .breadcrumbs { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: .78rem; padding: 23px 0 0; }
+  .breadcrumbs a { text-decoration: none; }
+  .utility-hero { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(270px, .62fr); gap: 8vw; padding: 75px 0 83px; align-items: end; }
+  .hero-main .eyebrow { color: var(--accent); margin-bottom: 18px; }
+  h1 { font-size: clamp(3.5rem, 7.5vw, 7.1rem); line-height: .98; letter-spacing: -.07em; margin: 0 0 30px; }
+  h1 em { color: var(--accent); font-weight: 400; }
+  .hero-lede { font-size: clamp(1.1rem, 1.7vw, 1.35rem); line-height: 1.5; max-width: 62ch; color: #525665; margin: 0; }
+  .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 30px; margin-top: 32px; }
+  .hero-button { display: inline-flex; align-items: center; gap: 25px; padding: 12px 18px; background: var(--accent); color: white; text-decoration: none; font-size: .91rem; font-weight: 700; border-radius: 5px; transition: transform .2s, box-shadow .2s; }
+  .hero-button:hover { color: white; transform: translateY(-2px); box-shadow: 0 6px 18px #0000cd2a; }
+  .text-link { font-size: .9rem; font-weight: 600; text-decoration: none; }
+  .text-link span { margin-left: 5px; }
+  .hero-aside { border-top: 2px solid var(--accent); padding-top: 14px; max-width: 360px; }
+  .aside-title { font-size: .7rem; text-transform: uppercase; letter-spacing: .13em; font-weight: 700; color: var(--accent); }
+  .hero-aside ol { padding: 0; list-style: none; margin: 20px 0 0; }
+  .hero-aside li { display: flex; gap: 19px; border-top: 1px solid var(--rule); padding: 14px 0; font-size: .94rem; font-weight: 600; line-height: 1.35; }
+  .hero-aside li > span { color: var(--accent); font-variant-numeric: tabular-nums; }
+  .hero-aside small { display: block; color: var(--muted); font-size: .79rem; font-weight: 400; margin-top: 4px; }
+  .takeaways { border-top: 1px solid var(--rule); padding: 78px 0 0; }
+  .takeaways > div:first-child { max-width: 800px; }
+  .takeaways h2 { font-size: clamp(2.2rem, 4vw, 3.5rem); line-height: 1.1; letter-spacing: -.045em; margin: 13px 0 15px; }
+  .takeaways > div:first-child > p:last-child { color: var(--muted); margin-bottom: 32px; }
+  .takeaway-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .takeaway-cards article { background: #f7f8fd; border: 1px solid #e2e4ef; border-radius: 9px; padding: 23px; }
+  .takeaway-cards span { font-size: .68rem; text-transform: uppercase; letter-spacing: .12em; font-weight: 700; color: var(--accent); }
+  .takeaway-cards h3 { font-size: 1.35rem; line-height: 1.2; margin: 20px 0 12px; }
+  .takeaway-cards p { font-size: .9rem; color: #555968; line-height: 1.5; margin: 0; }
+  .takeaway-cards strong { color: var(--ink); }
+  .ordinal-note { max-width: 95ch; margin: 27px 0 0; padding: 16px 20px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: .89rem; line-height: 1.55; }
+  @media (max-width: 920px) { .utility-hero { gap: 35px; } h1 { font-size: clamp(3.3rem, 7vw, 5.2rem); } }
+  @media (max-width: 760px) { .utility-page { padding: 0 22px 65px; } .utility-hero { grid-template-columns: 1fr; padding: 50px 0 58px; } .hero-aside { max-width: none; } .takeaway-cards { grid-template-columns: 1fr; } .takeaways { padding-top: 54px; } }
+  @media (prefers-reduced-motion: reduce) { .hero-button { transition: none; } }
+</style>

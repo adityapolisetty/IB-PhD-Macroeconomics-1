@@ -1,16 +1,16 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-import { lessons, withBase } from '../lib/lessons.js';
+import { withBase } from '../lib/lessons.js';
 ---
 <SiteLayout>
   <main class="home" id="main">
     <section class="home-intro">
-      <div><h1>Macroeconomics 1</h1></div>
-      <div class="intro-copy"><p>A tool to visualise concepts in macroeconomics and computation</p></div>
+      <div><p class="eyebrow">Interactive mathematics</p><h1>Macroeconomics 1</h1></div>
+      <div class="intro-copy"><p>Explore the shapes behind economic models. Move a tangent, inspect a slope, and see where a function reaches its limits.</p></div>
     </section>
-    <section id="tutorials" aria-labelledby="directory-title">
-      <div class="directory-heading"><h2 id="directory-title">The Solow model</h2><span>One model to explore</span></div>
-      {lessons.map(lesson => <a class="lesson-row" href={withBase(`tutorials/${lesson.slug}/`)}><span class="number">{String(lesson.number).padStart(2, '0')}</span><div><h3>{lesson.title}</h3><p>{lesson.description}</p></div><span class="topic">{lesson.topic}</span><span class="arrow" aria-hidden="true">↗</span></a>)}
+    <section aria-labelledby="directory-title">
+      <div class="directory-heading"><h2 id="directory-title">Explore</h2><span>A visual guide</span></div>
+      <a class="lesson-row" href={withBase('utility-functions/')}><span class="number">01</span><div><h3>Utility functions</h3><p>Manim animations you control, marginal utility, extrema and indifference curves.</p></div><span class="topic">Mathematical foundations</span><span class="arrow" aria-hidden="true">↗</span></a>
     </section>
   </main>
 </SiteLayout>

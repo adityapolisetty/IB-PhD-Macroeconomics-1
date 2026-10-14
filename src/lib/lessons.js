@@ -8,9 +8,9 @@ const allLessons = [
   { number: 10, slug: 'rbc', title: 'How local is a local approximation?', short: 'RBC & approximation', question: 'When do two decision rules stop agreeing?', description: 'Numerical and log-linear RBC policies facing the same shock.', topic: 'Business cycles', source: 'Problem_Set_4_Q4.py' }
 ];
 
-// Keep the remaining lessons in the source tree while exposing only the
-// currently active model on the website.
-export const lessons = allLessons.filter(lesson => lesson.slug === 'solow');
+// Keep the lessons in source, but publish no tutorial routes while the
+// utility-functions guide is the public course page.
+export const lessons = [];
 
 export function withBase(path = '') {
   return `${import.meta.env.BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;

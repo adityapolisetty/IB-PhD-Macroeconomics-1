@@ -1,10 +1,10 @@
 # IB PhD Macroeconomics 1
 
-A course companion for the `adityapolisetty/IB-PhD-Macroeconomics-1` repository, with seven interactive lessons, written economic intuition, LaTeX equations and Jupyter notebooks. The interface uses a white background, Source Sans Pro typography, restrained colour and custom SVG charts.
+A course companion for the `adityapolisetty/IB-PhD-Macroeconomics-1` repository. The public site currently features a visual guide to common utility functions: slider-controlled Manim animations, live marginal utility, extrema and two-good indifference curves. The interface uses a white background, Source Sans Pro typography and restrained colour.
 
 [Open the course website](https://adityapolisetty.github.io/IB-PhD-Macroeconomics-1/).
 
-Built with Astro, MDX, Svelte and D3. Static deployment on GitHub Pages. There is no Python server and no account requirement for students.
+Built with Astro and Svelte, with animations rendered offline by Manim. Static deployment on GitHub Pages. There is no Python server and no account requirement for students.
 
 ## Local development
 
@@ -35,7 +35,19 @@ The helper marks `node_modules`, `.pnpm-store`, `.cache`, `.verification`, `dist
 
 Run the helper again if a generated folder is deleted and recreated. The local AP task runner also applies it before its commands. Git's `.gitignore` controls repository contents; Dropbox uses the separate `com.dropbox.ignored` directory marker.
 
-## Lessons
+## Utility animations
+
+`scripts/render-utility-manim.py` renders five one-good sweeps and four two-good sweeps to `public/utility/*.mp4`. The script requires Manim Community Edition and FFmpeg in a local Python environment. Run it from the site root with that environment's Python:
+
+```sh
+python scripts/render-utility-manim.py
+```
+
+The videos use frequent keyframes so the browser sliders can seek promptly. Formula values and interpretation are calculated in `src/lib/utility.js`; the videos show the matching geometry. Commit the rendered MP4 files along with source changes.
+
+## Retained lesson source
+
+The earlier tutorial lessons remain in `src/content/lessons`, but `src/lib/lessons.js` publishes no tutorial routes. The Solow lesson is not linked or included in the built site.
 
 | Tutorial | Lesson | Notebook |
 | --- | --- | --- |
@@ -52,7 +64,10 @@ The numbering follows the teaching plan; tutorials 4, 5 and 8 have no Python sec
 ## Customise the aesthetics
 
 - **Colours, typography, spacing and widths:** `src/styles/global.css`. Change the tokens at the top; the charts use the same palette as the pages.
-- **Navigation and lesson titles:** `src/lib/lessons.js`.
+- **Published page:** `src/pages/utility-functions.astro`.
+- **Interactive controls and mathematical readouts:** `src/components/UtilityExplorer.svelte` and `src/lib/utility.js`.
+- **Manim scene generation:** `scripts/render-utility-manim.py`.
+- **Retained lesson titles and route exposure:** `src/lib/lessons.js`.
 - **Page structure:** `src/layouts/SiteLayout.astro` and `LessonLayout.astro`.
 - **Written intuition, equations and code steps:** `src/content/lessons/*.mdx`.
 - **Axes, lines, legends, tooltips and responsive chart behaviour:** `src/components/LineChart.svelte`.
@@ -61,7 +76,7 @@ The numbering follows the teaching plan; tutorials 4, 5 and 8 have no Python sec
 
 The theme bundles Source Sans Pro for headings and body text, with system fonts as fallbacks. Dependencies and mathematical fonts are bundled into the site. No CDN is needed for the finished pages.
 
-Each lesson moves through intuition, model, a prediction, an experiment and interpretation. Keep experiments small enough to explain one mechanism at a time. The questions reveal their answers through native disclosure controls.
+The retained lessons move through intuition, model, a prediction, an experiment and interpretation. The public utility guide introduces the mathematical ideas before moving to its controls.
 
 ## Notebooks and reference scripts
 
@@ -104,4 +119,4 @@ An optional Actions workflow is provided in `deployment/github-actions.yml.examp
 
 ## Browser verification
 
-`scripts/check-browser.cjs` exercises all seven lessons, their primary controls, notebook links, equation rendering and layouts at desktop and mobile widths. Run it against a local preview with Playwright available; set `PLAYWRIGHT_MODULE_PATH` and `CHROME_PATH` when using an existing installation. Screenshots and browser profiles stay in the ignored `.verification/` directory.
+`scripts/check-utility-browser.cjs` verifies the public utility guide, video seeking, live values and mobile layout. Run it against a local preview with Playwright available; set `PLAYWRIGHT_MODULE_PATH` and `CHROME_PATH` when using an existing installation. Screenshots and browser profiles stay in the ignored `.verification/` directory. The earlier `check-browser.cjs` targets the retained tutorial pages and is not a public-site check while those routes are hidden.

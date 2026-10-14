@@ -10,6 +10,7 @@ export default defineConfig({
   base: process.env.BASE_PATH || '/',
   output: 'static',
   trailingSlash: 'always',
+  vite: { cacheDir: '.cache/vite' },
   integrations: [mdx(), svelte()],
   markdown: {
     remarkPlugins: [remarkMath],
