@@ -1,6 +1,6 @@
 # IB PhD Macroeconomics 1
 
-A course companion for the `adityapolisetty/IB-PhD-Macroeconomics-1` repository. The public site currently features a visual guide to common utility functions: slider-controlled Manim animations, live marginal utility, extrema and two-good indifference curves. The interface uses a white background, Source Sans Pro typography and restrained colour.
+A course companion for the `adityapolisetty/IB-PhD-Macroeconomics-1` repository. The public site features a visual guide to common utility functions and AK production: slider-controlled Manim animations, live derivatives, extrema and a growth check. The interface uses a white background, Source Sans Pro typography and restrained colour.
 
 [Open the course website](https://adityapolisetty.github.io/IB-PhD-Macroeconomics-1/).
 
@@ -37,13 +37,15 @@ Run the helper again if a generated folder is deleted and recreated. The local A
 
 ## Utility animations
 
-`scripts/render-utility-manim.py` renders five one-good sweeps and four two-good sweeps to `public/utility/*.mp4`. The script requires Manim Community Edition and FFmpeg in a local Python environment. Run it from the site root with that environment's Python:
+`scripts/render-utility-manim.py` renders five utility sweeps and seven AK production sweeps (for productivity values from 0.50 to 2.00) to `public/utility/*.mp4`. The script requires Manim Community Edition and FFmpeg in a local Python environment. Run it from the site root with that environment's Python:
 
 ```sh
 python scripts/render-utility-manim.py
 ```
 
 The videos use frequent keyframes so the browser sliders can seek promptly. Formula values and interpretation are calculated in `src/lib/utility.js`; the videos show the matching geometry. Commit the rendered MP4 files along with source changes.
+
+If Dropbox locks Manim's scratch SVG files on Windows, set `MANIM_MEDIA_DIR` to a writable directory outside Dropbox before rendering. The finished MP4s still go to `public/utility/`.
 
 ## Retained lesson source
 
