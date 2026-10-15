@@ -1,0 +1,8 @@
+---
+import GuideLayout from '../layouts/GuideLayout.astro';
+import UtilityExplorer from '../components/UtilityExplorer.svelte';
+---
+
+<GuideLayout title="Production functions" description="Overlay AK, Cobb-Douglas and CES production, with tangents, derivatives and growth." current="production-functions">
+  <UtilityExplorer kind="production" client:load />
+</GuideLayout>

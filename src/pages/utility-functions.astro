@@ -1,15 +1,8 @@
 ---
-import SiteLayout from '../layouts/SiteLayout.astro';
+import GuideLayout from '../layouts/GuideLayout.astro';
 import UtilityExplorer from '../components/UtilityExplorer.svelte';
 ---
 
-<SiteLayout title="Utility and production functions" description="Overlay common utility functions and AK production, with tangents, derivatives and extrema.">
-  <main class="utility-page" id="main">
-    <UtilityExplorer client:load />
-  </main>
-</SiteLayout>
-
-<style>
-  .utility-page { max-width: 1450px; margin: 0 auto; padding: 0 40px 90px; }
-  @media (max-width: 760px) { .utility-page { padding: 0 22px 65px; } }
-</style>
+<GuideLayout title="Utility functions" description="Overlay log, CRRA, CARA and quadratic utility, with tangents, derivatives and extrema." current="utility-functions">
+  <UtilityExplorer kind="utility" client:load />
+</GuideLayout>

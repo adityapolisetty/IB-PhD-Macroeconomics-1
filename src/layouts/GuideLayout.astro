@@ -1,0 +1,52 @@
+---
+import SiteLayout from './SiteLayout.astro';
+import { withBase } from '../lib/lessons.js';
+interface Props { title: string; description?: string; current: string; }
+const { title, description, current } = Astro.props;
+
+// Every guide page appears in the side index, in this order.
+const pages = [
+  { slug: 'utility-functions', label: 'Utility functions' },
+  { slug: 'production-functions', label: 'Production functions' },
+];
+if (!pages.some(page => page.slug === current)) throw new Error(`Unknown guide page: ${current}`);
+---
+
+<SiteLayout title={title} description={description}>
+  <div class="guide-shell">
+    <aside class="guide-index" aria-label="Pages">
+      <p class="index-title">Contents</p>
+      <nav>
+        {pages.map((page, i) => (
+          <a href={withBase(`${page.slug}/`)} aria-current={page.slug === current ? 'page' : undefined}>
+            <span class="index-number">{String(i + 1).padStart(2, '0')}</span>
+            <span>{page.label}</span>
+          </a>
+        ))}
+      </nav>
+    </aside>
+    <main class="guide-main" id="main"><slot /></main>
+  </div>
+</SiteLayout>
+
+<style>
+  .guide-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 72px; max-width: 1640px; margin: 0 auto; padding: 0 40px 90px; }
+  .guide-index { position: sticky; top: 28px; align-self: start; padding-top: 36px; }
+  .index-title { font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  nav { display: grid; gap: 4px; border-left: 1px solid var(--rule); }
+  nav a { display: flex; align-items: baseline; gap: 12px; margin-left: -1px; padding: 10px 14px; border-left: 2px solid transparent; border-radius: 0 8px 8px 0; color: var(--ink); text-decoration: none; font-size: .88rem; font-weight: 500; line-height: 1.35; transition: background .2s, border-color .2s, color .2s, transform .2s; }
+  nav a:hover { background: #f4f5fc; border-left-color: var(--accent); color: var(--accent); transform: translateX(3px); }
+  nav a[aria-current='page'] { background: var(--accent-soft); border-left-color: var(--accent); color: var(--accent); font-weight: 700; }
+  nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .index-number { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; transition: color .2s; }
+  nav a:hover .index-number, nav a[aria-current='page'] .index-number { color: var(--accent); }
+  .guide-main { min-width: 0; }
+  @media (max-width: 900px) {
+    .guide-shell { grid-template-columns: 1fr; gap: 0; padding: 0 22px 65px; }
+    .guide-index { position: static; padding-top: 22px; }
+    nav { display: flex; flex-wrap: wrap; gap: 8px; border-left: 0; }
+    nav a { margin-left: 0; padding: 7px 14px; border: 1px solid var(--rule); border-radius: 999px; }
+    nav a:hover { transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { nav a, .index-number { transition: none; } }
+</style>

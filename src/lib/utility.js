@@ -12,6 +12,10 @@ export function oneVariable(id, c, parameter = 2) {
     case 'cara': return { value: (1 - Math.exp(-parameter * c)) / parameter, marginal: Math.exp(-parameter * c), second: -parameter * Math.exp(-parameter * c) };
     case 'quadratic': return { value: c - parameter * c ** 2 / 2, marginal: 1 - parameter * c, second: -parameter };
     case 'ak': return { value: parameter * c, marginal: parameter, second: 0 };
+    // Per worker, alpha = 1/3; parameter is A.
+    case 'cobb-douglas': return { value: parameter * c ** (1 / 3), marginal: parameter / 3 * c ** (-2 / 3), second: -2 * parameter / 9 * c ** (-5 / 3) };
+    // Per worker, alpha = 1/3, rho = 0.5 (elasticity 2): f = A(sqrt(k)/3 + 2/3)^2.
+    case 'ces': return { value: parameter * (Math.sqrt(c) / 3 + 2 / 3) ** 2, marginal: parameter / 9 * (1 + 2 / Math.sqrt(c)), second: -parameter / 9 * c ** -1.5 };
     default: throw new Error(`Unknown function: ${id}`);
   }
 }
@@ -28,6 +32,8 @@ export function oneVariableFacts(id, parameter = 2) {
     case 'cara': return { domain: 'c ≥ 0', minimum: 'u(0) = 0, attained', maximum: `No attained maximum; ceiling ${(1 / parameter).toFixed(2)} as c → ∞`, shape: 'Increasing and strictly concave; slope falls exponentially.', use: 'A common risk preference example with constant absolute risk aversion.' };
     case 'quadratic': return { domain: 'c ≥ 0', minimum: 'None; utility falls without bound as c → ∞', maximum: `u = ${(1 / (2 * parameter)).toFixed(2)} at c = ${(1 / parameter).toFixed(2)}`, shape: 'Concave, but marginal utility turns negative beyond the bliss point.', use: 'A simple way to see a finite satiation point and an interior peak.' };
     case 'ak': return { domain: 'k ≥ 0', minimum: 'f(0) = 0, attained', maximum: 'None; output rises without bound', shape: 'A straight line with constant marginal product A. Raising A rotates the line upward.', use: 'With saving rate s, depreciation δ and population growth n, per-worker capital grows at sA − (δ + n).' };
+    case 'cobb-douglas': return { domain: 'k ≥ 0', minimum: 'f(0) = 0, attained', maximum: 'None; output rises without bound', shape: 'Increasing and strictly concave. The marginal product falls toward zero.', use: 'Diminishing returns give the Solow and Ramsey models a steady state.' };
+    case 'ces': return { domain: 'k ≥ 0', minimum: `f(0) = 4A/9 = ${(4 * parameter / 9).toFixed(2)}, attained`, maximum: 'None; output rises without bound', shape: `Increasing and strictly concave. The marginal product falls toward A/9 = ${(parameter / 9).toFixed(2)}, not zero.`, use: 'With easy substitution, capital alone sustains growth when sA/9 > δ + n.' };
     default: throw new Error(`Unknown function: ${id}`);
   }
 }

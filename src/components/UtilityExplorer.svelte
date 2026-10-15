@@ -4,23 +4,34 @@
   import { renderToString } from 'katex';
   import LineChart from './LineChart.svelte';
 
-  // start: lowest c drawn; log and CRRA diverge at zero.
-  const families = [
-    { id: 'log', name: 'Logarithmic', tag: 'steep near zero', parameter: 1, start: 0.25, formula: 'u(c)=\\ln c', derivative: "u'(c)=1/c", second: "u''(c)=-1/c^2" },
-    { id: 'crra', name: 'CRRA', tag: 'curvature matters', parameter: 2, start: 0.25, formula: 'u(c)=1-1/c\\quad(\\sigma=2)', derivative: "u'(c)=c^{-2}", second: "u''(c)=-2c^{-3}" },
-    { id: 'cara', name: 'CARA', tag: 'finite ceiling', parameter: 0.6, start: 0, formula: 'u(c)=(1-e^{-0.6c})/0.6', derivative: "u'(c)=e^{-0.6c}", second: "u''(c)=-0.6e^{-0.6c}" },
-    { id: 'quadratic', name: 'Quadratic', tag: 'satiation', parameter: 0.35, start: 0, formula: 'u(c)=c-0.175c^2', derivative: "u'(c)=1-0.35c", second: "u''(c)=-0.35" },
-    { id: 'ak', name: 'AK production', tag: 'constant returns', parameter: 1, start: 0, formula: 'f(k)=Ak', derivative: "f'(k)=A", second: "f''(k)=0" },
-  ];
+  export let kind = 'utility';
+
+  // start: lowest input drawn; log and CRRA diverge at zero. scaled: the A slider sets the parameter.
+  const kinds = {
+    utility: { title: 'Utility functions', x: 'c', fn: 'u', xLabel: 'Consumption c', yLabel: 'Utility u(c)', ticked: ['log', 'crra'], families: [
+      { id: 'log', name: 'Logarithmic', tag: 'steep near zero', parameter: 1, start: 0.25, formula: 'u(c)=\\ln c', derivative: "u'(c)=1/c", second: "u''(c)=-1/c^2" },
+      { id: 'crra', name: 'CRRA', tag: 'curvature matters', parameter: 2, start: 0.25, formula: 'u(c)=1-1/c\\quad(\\sigma=2)', derivative: "u'(c)=c^{-2}", second: "u''(c)=-2c^{-3}" },
+      { id: 'cara', name: 'CARA', tag: 'finite ceiling', parameter: 0.6, start: 0, formula: 'u(c)=(1-e^{-0.6c})/0.6', derivative: "u'(c)=e^{-0.6c}", second: "u''(c)=-0.6e^{-0.6c}" },
+      { id: 'quadratic', name: 'Quadratic', tag: 'satiation', parameter: 0.35, start: 0, formula: 'u(c)=c-0.175c^2', derivative: "u'(c)=1-0.35c", second: "u''(c)=-0.35" },
+    ] },
+    production: { title: 'Production functions', x: 'k', fn: 'f', xLabel: 'Capital per worker k', yLabel: 'Output per worker f(k)', ticked: ['ak', 'cobb-douglas', 'ces'], families: [
+      { id: 'ak', name: 'AK', tag: 'constant returns', scaled: true, start: 0, formula: 'f(k)=Ak', derivative: "f'(k)=A", second: "f''(k)=0" },
+      { id: 'cobb-douglas', name: 'Cobb-Douglas', tag: 'diminishing returns', scaled: true, start: 0, formula: 'f(k)=Ak^{1/3}', derivative: "f'(k)=\\tfrac{A}{3}k^{-2/3}", second: "f''(k)=-\\tfrac{2A}{9}k^{-5/3}" },
+      { id: 'ces', name: 'CES', tag: 'elasticity σ = 2', scaled: true, start: 0, formula: 'f(k)=A\\left(\\tfrac13\\sqrt{k}+\\tfrac23\\right)^2', derivative: "f'(k)=\\tfrac{A}{9}\\left(1+2/\\sqrt{k}\\right)", second: "f''(k)=-\\tfrac{A}{9}k^{-3/2}" },
+    ] },
+  };
+  const setup = kinds[kind];
+  if (!setup) throw new Error(`Unknown explorer kind: ${kind}`);
+  const families = setup.families;
   const X_MAX = 8;
   const PLAY_MS = 5000;
-  let ticked = ['log', 'crra'];
+  let ticked = [...setup.ticked];
   let c = 2;
   let productivity = 1;
   let playing = false;
   let frame = null;
 
-  $: curves = families.filter(f => ticked.includes(f.id)).map(f => buildCurve(f, f.id === 'ak' ? Number(productivity) : f.parameter));
+  $: curves = families.filter(f => ticked.includes(f.id)).map(f => buildCurve(f, f.scaled ? Number(productivity) : f.parameter));
   $: rows = curves.map(curve => ({ ...curve, at: oneVariable(curve.family.id, Number(c), curve.parameter) }));
   // Grey dotted guides from each point to both axes; the chart clips the long downward leg.
   $: guides = rows.flatMap(row => [
@@ -34,7 +45,7 @@
   $: markers = rows.map(row => ({ x: Number(c), y: row.at.value, color: row.color }));
   $: yDomain = fitDomain(curves);
   $: akTicked = ticked.includes('ak');
-  $: amountSymbol = ticked.length === 1 && akTicked ? 'k' : 'c';
+  $: amountSymbol = setup.x;
   $: growthRate = 0.2 * Number(productivity) - 0.25;
 
   function buildCurve(family, parameter) {
@@ -43,10 +54,7 @@
       const x = family.start + (X_MAX - family.start) * i / 160;
       points.push({ x, y: oneVariable(family.id, x, parameter).value });
     }
-    const isAk = family.id === 'ak';
-    const formula = isAk ? `f(k)=${parameter.toFixed(2)}k` : family.formula;
-    const derivative = isAk ? `f'(k)=${parameter.toFixed(2)}` : family.derivative;
-    const tex = [formula, derivative, family.second].map(t => renderToString(t, { throwOnError: false }));
+    const tex = [family.formula, family.derivative, family.second].map(t => renderToString(t, { throwOnError: false }));
     return { family, parameter, color: `fn-${family.id}`, points, tex, facts: oneVariableFacts(family.id, parameter) };
   }
   // Fixed half-width in c, as in the earlier Manim films.
@@ -88,8 +96,9 @@
   onDestroy(stop);
 </script>
 
-<section class="lab" id="function-explorer" aria-label="Utility and production functions">
-  <div class="family-picks" role="group" aria-label="Choose the functions to draw">
+<section class="lab" id="function-explorer" aria-label={setup.title}>
+  <h1 class="explorer-title">{setup.title} visualised</h1>
+  <div class="family-picks" role="group" aria-label="Choose the functions to draw" style={`--count: ${families.length}`}>
     {#each families as family}
       <label class="pick" class:on={ticked.includes(family.id)} style={`--swatch: var(--fn-${family.id})`}><input type="checkbox" bind:group={ticked} value={family.id} /><span><span class="pick-name">{family.name}</span><small>{family.tag}</small></span></label>
     {/each}
@@ -98,7 +107,7 @@
     <div class="stage-main">
       <div class="chart-frame">
         {#if rows.length}
-          <LineChart {series} {markers} {yDomain} xDomain={[0, X_MAX]} title="Ticked functions and their tangents" description="Each ticked function is drawn on shared axes with its tangent at the chosen input." xLabel="Consumption c, or capital k for AK" xLabelShort="c (k for AK)" yLabel="u(c), or f(k) for AK" showLegend={false} interactive={false} animate={false} scaleCues={false} heightScale={1.2} grid={false} />
+          <LineChart {series} {markers} {yDomain} xDomain={[0, X_MAX]} title="Selected functions and their tangents" description="Each selected function is drawn on shared axes with its tangent at the chosen input." xLabel={setup.xLabel} xLabelShort={setup.x} yLabel={setup.yLabel} showLegend={false} interactive={false} animate={false} scaleCues={false} heightScale={1.2} grid={false} />
         {:else}
           <p class="empty-chart">Tick at least one function above to draw it.</p>
         {/if}
@@ -106,12 +115,12 @@
       <div class="transport">
         <button class="play" type="button" on:click={togglePlay} aria-label={playing ? 'Pause tangent animation' : 'Play tangent animation'}>{playing ? '❚❚' : '▶'}</button>
         <label for="input-slider"><span>Move the tangents</span><strong>{amountSymbol} = {fmt(Number(c))}</strong></label>
-        <input id="input-slider" aria-label="Consumption c, or capital k for AK" type="range" min="0.5" max="7.5" step="0.05" bind:value={c} on:input={stop} style={`--progress:${((Number(c) - 0.5) / 7) * 100}%`} />
+        <input id="input-slider" aria-label={setup.xLabel} type="range" min="0.5" max="7.5" step="0.05" bind:value={c} on:input={stop} style={`--progress:${((Number(c) - 0.5) / 7) * 100}%`} />
         <div class="range-ends"><span>0.5</span><span>7.5</span></div>
       </div>
-      {#if akTicked}
+      {#if kind === 'production'}
         <div class="parameter-control">
-          <label for="productivity-slider"><span>Productivity A · changes the AK line's slope</span><strong>{fmt(Number(productivity))}</strong></label>
+          <label for="productivity-slider"><span>Productivity A</span><strong>{fmt(Number(productivity))}</strong></label>
           <input id="productivity-slider" aria-label="Productivity, A" type="range" min="0.5" max="2" step="0.25" bind:value={productivity} style={`--progress:${((Number(productivity) - 0.5) / 1.5) * 100}%`} />
           <div class="range-ends"><span>0.50</span><span>2.00</span></div>
         </div>
@@ -121,10 +130,9 @@
       <p class="readout-kicker">At {amountSymbol} = {fmt(Number(c))}</p>
       {#if rows.length}
         <table class="values">
-          <thead><tr><th scope="col">Function</th><th scope="col">u(c)</th><th scope="col">u′(c)</th><th scope="col">u″(c)</th></tr></thead>
+          <thead><tr><th scope="col">Function</th><th scope="col">{setup.fn}({setup.x})</th><th scope="col">{setup.fn}′({setup.x})</th><th scope="col">{setup.fn}″({setup.x})</th></tr></thead>
           <tbody>{#each rows as row}<tr style={`--swatch: var(--${row.color})`}><th scope="row"><i aria-hidden="true"></i>{row.family.name}</th><td>{fmt(row.at.value)}</td><td>{fmt(row.at.marginal)}</td><td>{fmt(row.at.second)}</td></tr>{/each}</tbody>
         </table>
-        <p class="value-note">The middle column is the tangent's slope. For AK read f(k), f′(k) and f″(k).</p>
       {:else}
         <p class="value-note">Tick a function to read its values.</p>
       {/if}
@@ -147,8 +155,9 @@
 </section>
 
 <style>
-  .lab { --fn-log: #0000cd; --fn-crra: #cb622d; --fn-cara: #00897b; --fn-quadratic: #a23b8f; --fn-ak: #262824; --fn-guide: #9a9da6; padding: 36px 0 70px; }
-  .family-picks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
+  .lab { --fn-log: #0000cd; --fn-crra: #cb622d; --fn-cara: #00897b; --fn-quadratic: #a23b8f; --fn-ak: #cb622d; --fn-cobb-douglas: #0000cd; --fn-ces: #00897b; --fn-guide: #9a9da6; padding: 36px 0 70px; }
+  .explorer-title { font-size: clamp(1.9rem, 3.2vw, 2.7rem); line-height: 1.1; letter-spacing: -.035em; margin: 0 0 22px; }
+  .family-picks { display: grid; grid-template-columns: repeat(var(--count), minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
   .pick { display: flex; gap: 11px; align-items: flex-start; min-width: 0; padding: 13px 15px 11px; background: #f7f8fd; border: 1px solid #e1e3ee; border-radius: 8px; cursor: pointer; transition: border-color .2s, background .2s, transform .2s; }
   .pick:hover { border-color: var(--swatch); transform: translateY(-2px); }
   .pick.on { background: color-mix(in srgb, var(--swatch) 7%, #fff); border-color: var(--swatch); box-shadow: inset 0 3px 0 var(--swatch); }
