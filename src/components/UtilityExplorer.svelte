@@ -140,7 +140,7 @@
     </aside>
   </div>
   {#if rows.length}
-    <div class="fact-cards">
+    <div class="fact-cards" style={`--count: ${families.length}`}>
       {#each rows as row}
         <article style={`--swatch: var(--${row.color})`}>
           <h3>{row.family.name}</h3>
@@ -196,7 +196,7 @@
   .growth-note { display: grid; gap: 4px; margin: 20px 0 0; padding: 13px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: .8rem; line-height: 1.4; }
   .growth-note strong { font-size: .75rem; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); }
   .growth-note b { color: var(--accent); font-variant-numeric: tabular-nums; }
-  .fact-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-top: 15px; }
+  .fact-cards { display: grid; grid-template-columns: repeat(var(--count), minmax(0, 1fr)); gap: 8px; margin-top: 15px; }
   .fact-cards article { display: grid; gap: 12px; align-content: start; padding: 17px 20px; background: #fafaff; border: 1px solid var(--rule); border-top: 3px solid var(--swatch); border-radius: 9px; }
   .fact-cards h3 { margin: 0; font-size: 1.05rem; line-height: 1.3; }
   .math-stack { display: grid; gap: 4px; }
@@ -206,8 +206,8 @@
   .fact-cards dd { margin: 2px 0 0; font-size: .88rem; font-weight: 600; line-height: 1.35; }
   .fact-cards p { margin: 0; font-size: .88rem; line-height: 1.45; color: var(--muted); }
   .fact-cards p strong { color: var(--ink); }
-  @media (max-width: 1050px) { .stage-grid { grid-template-columns: minmax(0, 1.4fr) minmax(250px, .8fr); } .family-picks { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @media (max-width: 760px) { .lab { padding: 24px 0 54px; } .stage-grid { grid-template-columns: 1fr; } .family-picks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 1050px) { .stage-grid { grid-template-columns: minmax(0, 1.4fr) minmax(250px, .8fr); } .family-picks, .fact-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 760px) { .lab { padding: 24px 0 54px; } .stage-grid { grid-template-columns: 1fr; } .family-picks { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fact-cards { grid-template-columns: 1fr; } }
   @media (max-width: 430px) { .family-picks { gap: 5px; } .pick { padding: 11px 10px; gap: 8px; } .pick-name { font-size: .84rem; } .pick small { font-size: .7rem; } .chart-frame { padding: 14px 10px 0; } .transport { padding: 15px 14px 16px; grid-template-columns: 37px 1fr; gap: 10px; } .play { width: 37px; height: 37px; } .transport label { font-size: .78rem; } .parameter-control { margin-left: 61px; margin-right: 14px; } .parameter-control label { font-size: .78rem; } .readout { padding: 18px; } }
   @media (prefers-reduced-motion: reduce) { .pick, .play { transition: none; } }
 </style>
