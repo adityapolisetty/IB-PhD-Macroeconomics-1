@@ -83,8 +83,7 @@
   onDestroy(stop);
 </script>
 
-<section class="lab" id="function-explorer" aria-labelledby="one-heading">
-  <div class="lab-head"><span class="chapter">One input / five functions</span><div><h2 id="one-heading">How the slope shapes the model</h2><p>Tick the functions to compare. Each dashed line is the tangent to the curve of the same colour. For utility, its slope is marginal utility; for AK production, it is the marginal product of capital.</p></div></div>
+<section class="lab" id="function-explorer" aria-label="Utility and production functions">
   <div class="family-picks" role="group" aria-label="Choose the functions to draw">
     {#each families as family}
       <label class="pick" class:on={ticked.includes(family.id)} style={`--swatch: var(--fn-${family.id})`}><input type="checkbox" bind:group={ticked} value={family.id} /><span><span class="pick-name">{family.name}</span><small>{family.tag}</small></span></label>
@@ -143,11 +142,7 @@
 </section>
 
 <style>
-  .lab { --fn-log: #0000cd; --fn-crra: #cb622d; --fn-cara: #00897b; --fn-quadratic: #a23b8f; --fn-ak: #262824; border-top: 1px solid var(--rule); padding: 76px 0 70px; }
-  .lab-head { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 36px; margin-bottom: 34px; }
-  .chapter { font-size: .77rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--accent); padding-top: 8px; }
-  h2 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.12; letter-spacing: -.045em; margin: 0 0 14px; max-width: 820px; }
-  .lab-head p { max-width: 74ch; color: var(--muted); line-height: 1.55; margin: 0; }
+  .lab { --fn-log: #0000cd; --fn-crra: #cb622d; --fn-cara: #00897b; --fn-quadratic: #a23b8f; --fn-ak: #262824; padding: 36px 0 70px; }
   .family-picks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
   .pick { display: flex; gap: 11px; align-items: flex-start; min-width: 0; padding: 13px 15px 11px; background: #f7f8fd; border: 1px solid #e1e3ee; border-radius: 8px; cursor: pointer; transition: border-color .2s, background .2s, transform .2s; }
   .pick:hover { border-color: var(--swatch); transform: translateY(-2px); }
@@ -198,7 +193,7 @@
   .fact-cards p { margin: 0; font-size: .88rem; line-height: 1.45; color: var(--muted); }
   .fact-cards p strong { color: var(--ink); }
   @media (max-width: 1050px) { .stage-grid { grid-template-columns: minmax(0, 1.4fr) minmax(250px, .8fr); } .family-picks { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @media (max-width: 760px) { .lab { padding: 54px 0; } .lab-head { grid-template-columns: 1fr; gap: 6px; } .stage-grid { grid-template-columns: 1fr; } .family-picks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 760px) { .lab { padding: 24px 0 54px; } .stage-grid { grid-template-columns: 1fr; } .family-picks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 430px) { .family-picks { gap: 5px; } .pick { padding: 11px 10px; gap: 8px; } .pick-name { font-size: .84rem; } .pick small { font-size: .7rem; } .chart-frame { padding: 14px 10px 0; } .transport { padding: 15px 14px 16px; grid-template-columns: 37px 1fr; gap: 10px; } .play { width: 37px; height: 37px; } .transport label { font-size: .78rem; } .parameter-control { margin-left: 61px; margin-right: 14px; } .parameter-control label { font-size: .78rem; } .readout { padding: 18px; } }
   @media (prefers-reduced-motion: reduce) { .pick, .play { transition: none; } }
 </style>
