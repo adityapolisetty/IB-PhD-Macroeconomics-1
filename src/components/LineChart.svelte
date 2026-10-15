@@ -16,6 +16,7 @@
   export let yDomain = undefined;
   export let showLegend = true;
   export let interactive = true;
+  export let animate = true;
   let container, width = 720, hidden = [], hover = null, pinned = false;
   let previousXAxis = null, previousYAxis = null, xScaleChange = null, yScaleChange = null;
   let height = 350;
@@ -170,7 +171,7 @@
         {#if r.axis === 'y'}<line class="reference" x1={margin.left} x2={width - margin.right} y1={yScale(r.value)} y2={yScale(r.value)} /><text class="reference-label" x={width - margin.right - 5} y={yScale(r.value) - 8} text-anchor="end">{r.label}</text>
         {:else}<line class="reference" x1={xScale(r.value)} x2={xScale(r.value)} y1={margin.top} y2={height - margin.bottom} /><text class="reference-label" x={xScale(r.value) + 6} y={margin.top + 15}>{r.label}</text>{/if}
       {/each}
-      <g clip-path={`url(#${clipId})`}>{#each visibleSeries as s}<path class="data-line" d={drawLine(s.points)} fill="none" stroke={`var(--${s.color || 'series-1'})`} stroke-width={s.width || 2.5} stroke-dasharray={s.dash ? '6 5' : undefined} />{/each}</g>
+      <g clip-path={`url(#${clipId})`}>{#each visibleSeries as s}<path class="data-line" class:still={!animate} d={drawLine(s.points)} fill="none" stroke={`var(--${s.color || 'series-1'})`} stroke-width={s.width || 2.5} stroke-dasharray={s.dash ? '6 5' : undefined} />{/each}</g>
       {#each markers as m}<circle cx={xScale(m.x)} cy={yScale(m.y)} r="4.5" fill={`var(--${m.color || 'series-1'})`} stroke="var(--paper)" stroke-width="2" />{#if m.label}<text class="reference-label" x={xScale(m.x) + 9} y={yScale(m.y) - 9}>{m.label}</text>{/if}{/each}
       {#if hover !== null}<line class="hover-guide" x1={hoverX} x2={hoverX} y1={margin.top} y2={height - margin.bottom} />{#each hoverRows as row}<circle cx={hoverX} cy={yScale(row.value)} r="4.5" fill={`var(--${row.color || 'series-1'})`} stroke="var(--paper)" stroke-width="2" />{/each}{/if}
       {#if interactive}<rect class="pointer-area" x={margin.left} y={margin.top} width={width - margin.left - margin.right} height={height - margin.top - margin.bottom} fill="transparent" aria-hidden="true" on:pointermove={pointer} on:pointerleave={() => { if (!pinned) hover = null; }} on:pointerdown={event => { pointer(event); pinned = !pinned; }} />{/if}
@@ -207,6 +208,7 @@
   .reference-label, .region-label { font: 13px var(--font-body); fill: var(--muted); paint-order: stroke; stroke: var(--paper); stroke-width: 4px; }
   .region { fill: var(--accent-soft); opacity: .7; }
   .data-line { transition: d .22s ease; }
+  .data-line.still { transition: none; }
   .hover-guide { stroke: var(--muted); stroke-width: 1; opacity: .5; }
   .pointer-area { cursor: crosshair; touch-action: pan-y; }
   .chart-tooltip { position: absolute; top: 28px; width: 215px; background: var(--accent-soft); border: 1px solid var(--accent); padding: 10px 13px; font-size: .8125rem; line-height: 1.7; pointer-events: none; box-shadow: 0 4px 14px #2628240a; }

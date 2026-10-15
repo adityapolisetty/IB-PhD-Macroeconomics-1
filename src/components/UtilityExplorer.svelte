@@ -1,121 +1,167 @@
 <script>
+  import { onDestroy } from 'svelte';
   import { oneVariable, oneVariableFacts } from '../lib/utility.js';
-  import { withBase } from '../lib/lessons.js';
   import { renderToString } from 'katex';
+  import LineChart from './LineChart.svelte';
 
-  const oneFamilies = [
-    { id: 'linear', name: 'Linear', tag: 'constant slope', parameter: 1, formula: 'u(c)=c', derivative: "u'(c)=1", second: "u''(c)=0" },
-    { id: 'log', name: 'Logarithmic', tag: 'steep near zero', parameter: 1, formula: 'u(c)=\\ln c', derivative: "u'(c)=1/c", second: "u''(c)=-1/c^2" },
-    { id: 'crra', name: 'CRRA', tag: 'curvature matters', parameter: 2, formula: 'u(c)=1-1/c\\quad(\\sigma=2)', derivative: "u'(c)=c^{-2}", second: "u''(c)=-2c^{-3}" },
-    { id: 'cara', name: 'CARA', tag: 'finite ceiling', parameter: 0.6, formula: 'u(c)=(1-e^{-0.6c})/0.6', derivative: "u'(c)=e^{-0.6c}", second: "u''(c)=-0.6e^{-0.6c}" },
-    { id: 'quadratic', name: 'Quadratic', tag: 'satiation', parameter: 0.35, formula: 'u(c)=c-0.175c^2', derivative: "u'(c)=1-0.35c", second: "u''(c)=-0.35" },
-    { id: 'ak', name: 'AK production', tag: 'constant returns', parameter: 1, formula: 'f(k)=Ak', derivative: "f'(k)=A", second: "f''(k)=0" },
+  // start: lowest c drawn; log and CRRA diverge at zero.
+  const families = [
+    { id: 'log', name: 'Logarithmic', tag: 'steep near zero', parameter: 1, start: 0.25, formula: 'u(c)=\\ln c', derivative: "u'(c)=1/c", second: "u''(c)=-1/c^2" },
+    { id: 'crra', name: 'CRRA', tag: 'curvature matters', parameter: 2, start: 0.25, formula: 'u(c)=1-1/c\\quad(\\sigma=2)', derivative: "u'(c)=c^{-2}", second: "u''(c)=-2c^{-3}" },
+    { id: 'cara', name: 'CARA', tag: 'finite ceiling', parameter: 0.6, start: 0, formula: 'u(c)=(1-e^{-0.6c})/0.6', derivative: "u'(c)=e^{-0.6c}", second: "u''(c)=-0.6e^{-0.6c}" },
+    { id: 'quadratic', name: 'Quadratic', tag: 'satiation', parameter: 0.35, start: 0, formula: 'u(c)=c-0.175c^2', derivative: "u'(c)=1-0.35c", second: "u''(c)=-0.35" },
+    { id: 'ak', name: 'AK production', tag: 'constant returns', parameter: 1, start: 0, formula: 'f(k)=Ak', derivative: "f'(k)=A", second: "f''(k)=0" },
   ];
-  let oneId = 'log';
+  const X_MAX = 8;
+  const PLAY_MS = 5000;
+  let ticked = ['log', 'crra'];
   let c = 2;
   let productivity = 1;
-  let oneVideo;
-  let onePlaying = false;
+  let playing = false;
+  let frame = null;
 
-  $: one = oneFamilies.find(f => f.id === oneId);
-  $: isAk = oneId === 'ak';
-  $: amountSymbol = isAk ? 'k' : 'c';
-  $: oneValues = oneVariable(oneId, Number(c), isAk ? Number(productivity) : one.parameter);
-  $: facts = oneVariableFacts(oneId, isAk ? Number(productivity) : one.parameter);
-  $: oneSource = withBase(isAk ? `utility/one-ak-${Number(productivity).toFixed(2)}.mp4` : `utility/one-${oneId}.mp4`);
-  $: oneFormula = renderToString(isAk ? `f(k)=${Number(productivity).toFixed(2)}k` : one.formula, { throwOnError: false });
-  $: oneDerivative = renderToString(isAk ? `f'(k)=${Number(productivity).toFixed(2)}` : one.derivative, { throwOnError: false });
-  $: oneSecond = renderToString(one.second, { throwOnError: false });
+  $: curves = families.filter(f => ticked.includes(f.id)).map(f => buildCurve(f, f.id === 'ak' ? Number(productivity) : f.parameter));
+  $: rows = curves.map(curve => ({ ...curve, at: oneVariable(curve.family.id, Number(c), curve.parameter) }));
+  $: series = rows.flatMap(row => [
+    { id: row.family.id, label: row.family.name, points: row.points, color: row.color, width: 3 },
+    { id: `${row.family.id}-tangent`, label: `${row.family.name} tangent`, points: tangentPoints(row.at, Number(c)), color: row.color, width: 2, dash: true },
+  ]);
+  $: markers = rows.map(row => ({ x: Number(c), y: row.at.value, color: row.color }));
+  $: yDomain = fitDomain(curves);
+  $: akTicked = ticked.includes('ak');
+  $: amountSymbol = ticked.length === 1 && akTicked ? 'k' : 'c';
   $: growthRate = 0.2 * Number(productivity) - 0.25;
 
+  function buildCurve(family, parameter) {
+    const points = [];
+    for (let i = 0; i <= 160; i++) {
+      const x = family.start + (X_MAX - family.start) * i / 160;
+      points.push({ x, y: oneVariable(family.id, x, parameter).value });
+    }
+    const isAk = family.id === 'ak';
+    const formula = isAk ? `f(k)=${parameter.toFixed(2)}k` : family.formula;
+    const derivative = isAk ? `f'(k)=${parameter.toFixed(2)}` : family.derivative;
+    const tex = [formula, derivative, family.second].map(t => renderToString(t, { throwOnError: false }));
+    return { family, parameter, color: `fn-${family.id}`, points, tex, facts: oneVariableFacts(family.id, parameter) };
+  }
+  // Fixed half-width in c, as in the earlier Manim films.
+  function tangentPoints(at, x) {
+    const half = 0.47;
+    return [{ x: x - half, y: at.value - half * at.marginal }, { x: x + half, y: at.value + half * at.marginal }];
+  }
+  // Fit the curves only, so the axis stays still while the tangents move.
+  function fitDomain(list) {
+    const ys = list.flatMap(curve => curve.points.map(p => p.y));
+    if (!ys.length) return [0, 1];
+    const low = Math.min(...ys);
+    const high = Math.max(...ys);
+    return [Math.min(low, 0), high];
+  }
   function fmt(value) {
     if (!Number.isFinite(value)) return '∞';
     if (Math.abs(value) < 0.005) return '0.00';
     return value.toFixed(2).replace('-', '−');
   }
-  function seekOne() {
-    if (oneVideo && Number.isFinite(oneVideo.duration) && oneVideo.duration > 0) {
-      oneVideo.currentTime = ((Number(c) - 0.5) / 7) * Math.max(0, oneVideo.duration - 0.04);
-    }
+  function stop() {
+    playing = false;
+    if (frame !== null) cancelAnimationFrame(frame);
+    frame = null;
   }
-  function selectOne(id) {
-    oneVideo?.pause();
-    onePlaying = false;
-    oneId = id;
+  function togglePlay() {
+    if (playing) { stop(); return; }
+    if (Number(c) >= 7.45) c = 0.5;
+    playing = true;
+    let last = null;
+    const tick = now => {
+      if (last !== null) c = Math.min(7.5, Number(c) + 7 * (now - last) / PLAY_MS);
+      last = now;
+      if (Number(c) >= 7.5) { stop(); return; }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
   }
-  function changeProductivity() { oneVideo?.pause(); onePlaying = false; }
-  async function toggleOne() {
-    if (!oneVideo) return;
-    if (oneVideo.paused) {
-      if (oneVideo.currentTime >= oneVideo.duration - 0.1) oneVideo.currentTime = 0;
-      await oneVideo.play();
-      onePlaying = true;
-    } else { oneVideo.pause(); onePlaying = false; }
-  }
-  function syncOneFromVideo() {
-    if (oneVideo && onePlaying && oneVideo.duration) c = Math.min(7.5, 0.5 + 7 * oneVideo.currentTime / oneVideo.duration);
-  }
+  onDestroy(stop);
 </script>
 
 <section class="lab" id="function-explorer" aria-labelledby="one-heading">
-  <div class="lab-head"><span class="chapter">One input / six functions</span><div><h2 id="one-heading">How the slope shapes the model</h2><p>The orange line is the tangent. For utility, its slope is marginal utility; for AK production, it is the marginal product of capital.</p></div></div>
-  <div class="family-tabs" role="group" aria-label="Choose an economic function">
-    {#each oneFamilies as family}
-      <button type="button" class:active={oneId === family.id} aria-pressed={oneId === family.id} on:click={() => selectOne(family.id)}><span>{family.name}</span><small>{family.tag}</small></button>
+  <div class="lab-head"><span class="chapter">One input / five functions</span><div><h2 id="one-heading">How the slope shapes the model</h2><p>Tick the functions to compare. Each dashed line is the tangent to the curve of the same colour. For utility, its slope is marginal utility; for AK production, it is the marginal product of capital.</p></div></div>
+  <div class="family-picks" role="group" aria-label="Choose the functions to draw">
+    {#each families as family}
+      <label class="pick" class:on={ticked.includes(family.id)} style={`--swatch: var(--fn-${family.id})`}><input type="checkbox" bind:group={ticked} value={family.id} /><span><span class="pick-name">{family.name}</span><small>{family.tag}</small></span></label>
     {/each}
   </div>
   <div class="stage-grid">
     <div class="stage-main">
-      <div class="film-frame">
-        <video bind:this={oneVideo} src={oneSource} muted playsinline preload="auto" aria-label={`Manim graph of ${one.name} and its moving tangent`} on:loadedmetadata={seekOne} on:timeupdate={syncOneFromVideo} on:ended={() => onePlaying = false}></video>
-        <span class="film-tag">MANIM / TANGENT EXPLORER</span>
+      <div class="chart-frame">
+        {#if rows.length}
+          <LineChart {series} {markers} {yDomain} xDomain={[0, X_MAX]} title="Ticked functions and their tangents" description="Each ticked function is drawn on shared axes with its tangent at the chosen input." xLabel="Consumption c, or capital k for AK" xLabelShort="c (k for AK)" yLabel="u(c), or f(k) for AK" showLegend={false} interactive={false} animate={false} />
+        {:else}
+          <p class="empty-chart">Tick at least one function above to draw it.</p>
+        {/if}
       </div>
       <div class="transport">
-        <button class="play" type="button" on:click={toggleOne} aria-label={onePlaying ? 'Pause tangent animation' : 'Play tangent animation'}>{onePlaying ? '❚❚' : '▶'}</button>
-        <label for="input-slider"><span>Move the tangent</span><strong>{amountSymbol} = {fmt(Number(c))}</strong></label>
-        <input id="input-slider" aria-label={isAk ? 'Capital, k' : 'Consumption, c'} type="range" min="0.5" max="7.5" step="0.05" bind:value={c} on:input={seekOne} style={`--progress:${((Number(c) - 0.5) / 7) * 100}%`} />
+        <button class="play" type="button" on:click={togglePlay} aria-label={playing ? 'Pause tangent animation' : 'Play tangent animation'}>{playing ? '❚❚' : '▶'}</button>
+        <label for="input-slider"><span>Move the tangents</span><strong>{amountSymbol} = {fmt(Number(c))}</strong></label>
+        <input id="input-slider" aria-label="Consumption c, or capital k for AK" type="range" min="0.5" max="7.5" step="0.05" bind:value={c} on:input={stop} style={`--progress:${((Number(c) - 0.5) / 7) * 100}%`} />
         <div class="range-ends"><span>0.5</span><span>7.5</span></div>
       </div>
-      {#if isAk}
+      {#if akTicked}
         <div class="parameter-control">
-          <label for="productivity-slider"><span>Productivity A · changes the line's slope</span><strong>{fmt(Number(productivity))}</strong></label>
-          <input id="productivity-slider" aria-label="Productivity, A" type="range" min="0.5" max="2" step="0.25" bind:value={productivity} on:input={changeProductivity} style={`--progress:${((Number(productivity) - 0.5) / 1.5) * 100}%`} />
+          <label for="productivity-slider"><span>Productivity A · changes the AK line's slope</span><strong>{fmt(Number(productivity))}</strong></label>
+          <input id="productivity-slider" aria-label="Productivity, A" type="range" min="0.5" max="2" step="0.25" bind:value={productivity} style={`--progress:${((Number(productivity) - 0.5) / 1.5) * 100}%`} />
           <div class="range-ends"><span>0.50</span><span>2.00</span></div>
         </div>
       {/if}
-      <p class="film-note">The animation is rendered with Manim. Dragging the slider selects its corresponding frame; the numbers alongside it are calculated from the function.</p>
     </div>
     <aside class="readout" aria-live="polite">
-      <p class="readout-kicker">At your chosen {isAk ? 'capital stock' : 'consumption level'}</p>
-      <div class="large-number"><span>{isAk ? 'Marginal product of capital' : 'Marginal utility'}</span><strong>{fmt(oneValues.marginal)}</strong><small>the tangent's slope, {isAk ? 'f′(k)' : 'u′(c)'}</small></div>
-      <div class="readout-pair"><div><span>{isAk ? 'Output' : 'Utility'}</span><strong>{fmt(oneValues.value)}</strong></div><div><span>Second derivative</span><strong>{fmt(oneValues.second)}</strong></div></div>
-      <div class="math-stack"><div><span>Function</span><div class="math">{@html oneFormula}</div></div><div><span>First derivative</span><div class="math">{@html oneDerivative}</div></div><div><span>Second derivative</span><div class="math">{@html oneSecond}</div></div></div>
-      {#if isAk}<p class="growth-note"><strong>AK growth check</strong><span>With saving s = 0.20, depreciation δ = 0.20 and population growth n = 0.05:</span><span>k̇/k = sA − (δ + n) = <b>{growthRate > 0 ? '+' : ''}{fmt(growthRate)}</b></span><span>{growthRate > 0 ? 'Capital per worker grows.' : growthRate < 0 ? 'Capital per worker shrinks.' : 'Capital per worker stays constant.'}</span></p>{/if}
+      <p class="readout-kicker">At {amountSymbol} = {fmt(Number(c))}</p>
+      {#if rows.length}
+        <table class="values">
+          <thead><tr><th scope="col">Function</th><th scope="col">u(c)</th><th scope="col">u′(c)</th><th scope="col">u″(c)</th></tr></thead>
+          <tbody>{#each rows as row}<tr style={`--swatch: var(--${row.color})`}><th scope="row"><i aria-hidden="true"></i>{row.family.name}</th><td>{fmt(row.at.value)}</td><td>{fmt(row.at.marginal)}</td><td>{fmt(row.at.second)}</td></tr>{/each}</tbody>
+        </table>
+        <p class="value-note">The middle column is the tangent's slope. For AK read f(k), f′(k) and f″(k).</p>
+      {:else}
+        <p class="value-note">Tick a function to read its values.</p>
+      {/if}
+      {#if akTicked}<p class="growth-note"><strong>AK growth check</strong><span>With saving s = 0.20, depreciation δ = 0.20 and population growth n = 0.05:</span><span>k̇/k = sA − (δ + n) = <b>{growthRate > 0 ? '+' : ''}{fmt(growthRate)}</b></span><span>{growthRate > 0 ? 'Capital per worker grows.' : growthRate < 0 ? 'Capital per worker shrinks.' : 'Capital per worker stays constant.'}</span></p>{/if}
     </aside>
   </div>
-  <div class="facts-grid"><div><span class="fact-label">Domain</span><strong>{facts.domain}</strong></div><div><span class="fact-label">Minimum</span><strong>{facts.minimum}</strong></div><div><span class="fact-label">Maximum</span><strong>{facts.maximum}</strong></div></div>
-  <div class="interpretation"><p><strong>What to notice.</strong> {facts.shape}</p><p><strong>{isAk ? 'Why it matters in AK.' : 'Where it appears.'}</strong> {facts.use}</p></div>
+  {#if rows.length}
+    <div class="fact-cards">
+      {#each rows as row}
+        <article style={`--swatch: var(--${row.color})`}>
+          <h3>{row.family.name}</h3>
+          <div class="math-stack">{#each row.tex as html}<div class="math">{@html html}</div>{/each}</div>
+          <dl><div><dt>Domain</dt><dd>{row.facts.domain}</dd></div><div><dt>Minimum</dt><dd>{row.facts.minimum}</dd></div><div><dt>Maximum</dt><dd>{row.facts.maximum}</dd></div></dl>
+          <p><strong>What to notice.</strong> {row.facts.shape}</p>
+          <p><strong>{row.family.id === 'ak' ? 'Why it matters in AK.' : 'Where it appears.'}</strong> {row.facts.use}</p>
+        </article>
+      {/each}
+    </div>
+  {/if}
 </section>
 
 <style>
-  .lab { border-top: 1px solid var(--rule); padding: 76px 0 70px; }
+  .lab { --fn-log: #0000cd; --fn-crra: #cb622d; --fn-cara: #00897b; --fn-quadratic: #a23b8f; --fn-ak: #262824; border-top: 1px solid var(--rule); padding: 76px 0 70px; }
   .lab-head { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 36px; margin-bottom: 34px; }
   .chapter { font-size: .77rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--accent); padding-top: 8px; }
   h2 { font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.12; letter-spacing: -.045em; margin: 0 0 14px; max-width: 820px; }
   .lab-head p { max-width: 74ch; color: var(--muted); line-height: 1.55; margin: 0; }
-  .family-tabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
-  .family-tabs button { min-width: 0; text-align: left; padding: 13px 15px 11px; background: #f7f8fd; border: 1px solid #e1e3ee; border-radius: 8px; transition: border-color .2s, background .2s, transform .2s; }
-  .family-tabs button:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .family-tabs button.active { background: var(--accent-soft); border-color: var(--accent); box-shadow: inset 0 3px 0 var(--accent); }
-  .family-tabs span, .family-tabs small { display: block; white-space: normal; }
-  .family-tabs span { font-size: .96rem; font-weight: 700; line-height: 1.2; }
-  .family-tabs small { font-size: .75rem; line-height: 1.35; color: var(--muted); margin-top: 4px; }
+  .family-picks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
+  .pick { display: flex; gap: 11px; align-items: flex-start; min-width: 0; padding: 13px 15px 11px; background: #f7f8fd; border: 1px solid #e1e3ee; border-radius: 8px; cursor: pointer; transition: border-color .2s, background .2s, transform .2s; }
+  .pick:hover { border-color: var(--swatch); transform: translateY(-2px); }
+  .pick.on { background: color-mix(in srgb, var(--swatch) 7%, #fff); border-color: var(--swatch); box-shadow: inset 0 3px 0 var(--swatch); }
+  .pick:focus-within { outline: 2px solid var(--swatch); outline-offset: 2px; }
+  .pick input { accent-color: var(--swatch); width: 17px; height: 17px; margin: 2px 0 0; flex: none; cursor: pointer; }
+  .pick-name, .pick small { display: block; white-space: normal; }
+  .pick-name { font-size: .96rem; font-weight: 700; line-height: 1.2; }
+  .pick small { font-size: .75rem; line-height: 1.35; color: var(--muted); margin-top: 4px; }
   .stage-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(270px, .75fr); gap: 16px; align-items: stretch; }
   .stage-main, .readout { border: 1px solid var(--rule); border-radius: 12px; background: #fff; overflow: hidden; }
-  .film-frame { position: relative; background: #fff; aspect-ratio: 16 / 9; border-bottom: 1px solid var(--rule); }
-  video { display: block; width: 100%; height: 100%; object-fit: contain; }
-  .film-tag { position: absolute; top: 13px; left: 15px; pointer-events: none; background: rgba(255,255,255,.93); color: #50546b; font-size: .66rem; font-weight: 700; letter-spacing: .13em; padding: 5px 8px; border: 1px solid #dfe2ef; border-radius: 4px; }
-  .transport { display: grid; grid-template-columns: 42px 1fr; column-gap: 16px; padding: 18px 22px 2px; align-items: center; }
+  .chart-frame { padding: 20px 22px 4px; border-bottom: 1px solid var(--rule); }
+  .empty-chart { min-height: 350px; display: grid; place-items: center; color: var(--muted); margin: 0; }
+  .transport { display: grid; grid-template-columns: 42px 1fr; column-gap: 16px; padding: 18px 22px 20px; align-items: center; }
   .play { grid-row: 1 / 4; width: 42px; height: 42px; border: 1px solid var(--accent); border-radius: 50%; background: var(--accent); color: #fff; font-size: .8rem; display: grid; place-items: center; transition: transform .2s, box-shadow .2s; }
   .play:hover { transform: scale(1.06); box-shadow: 0 3px 12px #0000cd24; }
   .transport label { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; font-size: .86rem; font-weight: 600; }
@@ -124,36 +170,35 @@
   input[type='range']::-webkit-slider-thumb { appearance: none; width: 19px; height: 19px; border-radius: 50%; background: #fff; border: 3px solid var(--accent); box-shadow: 0 2px 5px #0002; }
   input[type='range']::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--accent); box-shadow: 0 2px 5px #0002; }
   .range-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: .72rem; font-variant-numeric: tabular-nums; line-height: 1.3; }
-  .parameter-control { margin: 16px 22px 0 80px; padding-top: 15px; border-top: 1px solid var(--rule); }
+  .parameter-control { margin: 0 22px 20px 80px; padding-top: 15px; border-top: 1px solid var(--rule); }
   .parameter-control label { display: flex; justify-content: space-between; gap: 12px; font-size: .86rem; font-weight: 600; }
   .parameter-control label strong { color: var(--accent); font-variant-numeric: tabular-nums; }
   .parameter-control input { margin-top: 12px; }
-  .film-note { font-size: .75rem; line-height: 1.45; color: var(--muted); padding: 0 22px 17px 80px; margin: 8px 0 0; }
   .readout { padding: 22px; display: flex; flex-direction: column; }
-  .readout-kicker { font-size: .71rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; color: var(--accent); margin: 0 0 22px; }
-  .large-number { display: grid; gap: 1px; padding-bottom: 21px; border-bottom: 1px solid var(--rule); }
-  .large-number span { font-size: .88rem; color: var(--muted); }
-  .large-number strong { font-size: clamp(2.8rem, 4.5vw, 4.4rem); line-height: 1; font-weight: 400; letter-spacing: -.06em; color: var(--accent); font-variant-numeric: tabular-nums; }
-  .large-number small { font-size: .76rem; color: var(--muted); }
-  .readout-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px 0; border-bottom: 1px solid var(--rule); }
-  .readout-pair div { display: grid; align-content: start; gap: 4px; }
-  .readout-pair span, .math-stack span { font-size: .72rem; color: var(--muted); line-height: 1.35; }
-  .readout-pair strong { font-size: 1.37rem; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .math-stack { display: grid; gap: 13px; padding-top: 20px; }
-  .math-stack > div { min-width: 0; }
-  .math-stack .math { overflow-x: auto; font-size: .9rem; line-height: 1.55; margin-top: 3px; }
+  .readout-kicker { font-size: .71rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
+  .values { width: 100%; border-collapse: collapse; font-size: .86rem; font-variant-numeric: tabular-nums; }
+  .values th, .values td { padding: 8px 0 8px 8px; text-align: right; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  .values th:first-child { text-align: left; padding-left: 0; }
+  .values thead th { font-size: .72rem; font-weight: 600; color: var(--muted); }
+  .values tbody th { font-weight: 600; }
+  .values i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; background: var(--swatch); vertical-align: middle; margin-right: 8px; }
+  .values td { color: var(--swatch); font-weight: 600; }
+  .value-note { font-size: .74rem; line-height: 1.45; color: var(--muted); margin: 10px 0 0; }
   .growth-note { display: grid; gap: 4px; margin: 20px 0 0; padding: 13px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-size: .8rem; line-height: 1.4; }
   .growth-note strong { font-size: .75rem; text-transform: uppercase; letter-spacing: .07em; color: var(--accent); }
   .growth-note b { color: var(--accent); font-variant-numeric: tabular-nums; }
-  .facts-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 9px; overflow: hidden; margin-top: 15px; }
-  .facts-grid > div { background: #fafaff; padding: 17px 20px; display: grid; align-content: start; gap: 5px; }
-  .fact-label { font-size: .69rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); }
-  .facts-grid strong { font-size: .92rem; font-weight: 600; line-height: 1.35; }
-  .interpretation { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; font-size: .93rem; line-height: 1.45; color: var(--muted); margin-top: 20px; }
-  .interpretation p { margin: 0; }
-  .interpretation strong { color: var(--ink); }
-  @media (max-width: 1050px) { .stage-grid { grid-template-columns: minmax(0, 1.4fr) minmax(250px, .8fr); } .family-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @media (max-width: 760px) { .lab { padding: 54px 0; } .lab-head { grid-template-columns: 1fr; gap: 6px; } .stage-grid { grid-template-columns: 1fr; } .family-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); } .facts-grid { grid-template-columns: 1fr; } .interpretation { grid-template-columns: 1fr; gap: 13px; } }
-  @media (max-width: 430px) { .family-tabs { gap: 5px; } .family-tabs button { padding: 11px 10px; } .family-tabs span { font-size: .84rem; } .family-tabs small { font-size: .7rem; } .transport { padding: 15px 14px 0; grid-template-columns: 37px 1fr; gap: 10px; } .play { width: 37px; height: 37px; } .transport label { font-size: .78rem; } .parameter-control { margin-left: 61px; margin-right: 14px; } .parameter-control label { font-size: .78rem; } .film-note { padding-left: 61px; padding-right: 12px; } .readout { padding: 18px; } }
-  @media (prefers-reduced-motion: reduce) { .family-tabs button, .play { transition: none; } }
+  .fact-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-top: 15px; }
+  .fact-cards article { display: grid; gap: 12px; align-content: start; padding: 17px 20px; background: #fafaff; border: 1px solid var(--rule); border-top: 3px solid var(--swatch); border-radius: 9px; }
+  .fact-cards h3 { margin: 0; font-size: 1.05rem; line-height: 1.3; }
+  .math-stack { display: grid; gap: 4px; }
+  .math-stack .math { overflow-x: auto; font-size: .88rem; line-height: 1.5; }
+  .fact-cards dl { display: grid; gap: 8px; margin: 0; }
+  .fact-cards dt { font-size: .69rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; color: var(--muted); }
+  .fact-cards dd { margin: 2px 0 0; font-size: .88rem; font-weight: 600; line-height: 1.35; }
+  .fact-cards p { margin: 0; font-size: .88rem; line-height: 1.45; color: var(--muted); }
+  .fact-cards p strong { color: var(--ink); }
+  @media (max-width: 1050px) { .stage-grid { grid-template-columns: minmax(0, 1.4fr) minmax(250px, .8fr); } .family-picks { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 760px) { .lab { padding: 54px 0; } .lab-head { grid-template-columns: 1fr; gap: 6px; } .stage-grid { grid-template-columns: 1fr; } .family-picks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 430px) { .family-picks { gap: 5px; } .pick { padding: 11px 10px; gap: 8px; } .pick-name { font-size: .84rem; } .pick small { font-size: .7rem; } .chart-frame { padding: 14px 10px 0; } .transport { padding: 15px 14px 16px; grid-template-columns: 37px 1fr; gap: 10px; } .play { width: 37px; height: 37px; } .transport label { font-size: .78rem; } .parameter-control { margin-left: 61px; margin-right: 14px; } .parameter-control label { font-size: .78rem; } .readout { padding: 18px; } }
+  @media (prefers-reduced-motion: reduce) { .pick, .play { transition: none; } }
 </style>
