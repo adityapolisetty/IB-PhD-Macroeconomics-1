@@ -19,6 +19,7 @@
   export let animate = true;
   export let scaleCues = true;
   export let heightScale = 1;
+  export let grid = true;
   let container, width = 720, hidden = [], hover = null, pinned = false;
   let previousXAxis = null, previousYAxis = null, xScaleChange = null, yScaleChange = null;
   let height = 350;
@@ -145,7 +146,7 @@
       <title>{title}</title><desc>{description || `${yLabel} against ${xLabel}.`}</desc>
       <defs><clipPath id={clipId}><rect x={margin.left} y={margin.top} width={width - margin.left - margin.right} height={height - margin.top - margin.bottom} /></clipPath></defs>
       {#each bands as band}<rect class="region" x={xScale(band.x0)} y={margin.top} width={Math.max(0, xScale(band.x1) - xScale(band.x0))} height={height - margin.bottom - margin.top} /><text class="region-label" x={(xScale(band.x0) + xScale(band.x1)) / 2} y={margin.top + 16} text-anchor="middle">{band.label}</text>{/each}
-      {#each yTicks as tick}<line class="grid" class:scale-grid={Boolean(yScaleChange) && tick === yTicks.at(-1)} x1={margin.left} x2={width - margin.right} y1={yScale(tick)} y2={yScale(tick)} /><text class="tick" class:scale-tick={Boolean(yScaleChange) && tick === yTicks.at(-1)} x={margin.left - 12} y={yScale(tick) + 4} text-anchor="end">{formatter(tick)}</text>{/each}
+      {#each yTicks as tick}{#if grid}<line class="grid" class:scale-grid={Boolean(yScaleChange) && tick === yTicks.at(-1)} x1={margin.left} x2={width - margin.right} y1={yScale(tick)} y2={yScale(tick)} />{/if}<text class="tick" class:scale-tick={Boolean(yScaleChange) && tick === yTicks.at(-1)} x={margin.left - 12} y={yScale(tick) + 4} text-anchor="end">{formatter(tick)}</text>{/each}
       <line class="axis" class:axis-active={Boolean(yScaleChange)} x1={margin.left} x2={margin.left} y1={margin.top} y2={height - margin.bottom} />
       <line class="axis" class:axis-active={Boolean(xScaleChange)} x1={margin.left} x2={width - margin.right} y1={height - margin.bottom} y2={height - margin.bottom} />
       {#each xTicks as tick}<line class="axis" x1={xScale(tick)} x2={xScale(tick)} y1={height - margin.bottom} y2={height - margin.bottom + 5} /><text class="tick" class:scale-tick={Boolean(xScaleChange) && tick === xTicks.at(-1)} x={xScale(tick)} y={height - margin.bottom + 23} text-anchor={xScale(tick) > width - 35 ? 'end' : xScale(tick) < margin.left + 10 ? 'start' : 'middle'}>{formatter(tick)}</text>{/each}

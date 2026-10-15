@@ -98,7 +98,7 @@
     <div class="stage-main">
       <div class="chart-frame">
         {#if rows.length}
-          <LineChart {series} {markers} {yDomain} xDomain={[0, X_MAX]} title="Ticked functions and their tangents" description="Each ticked function is drawn on shared axes with its tangent at the chosen input." xLabel="Consumption c, or capital k for AK" xLabelShort="c (k for AK)" yLabel="u(c), or f(k) for AK" showLegend={false} interactive={false} animate={false} scaleCues={false} heightScale={1.2} />
+          <LineChart {series} {markers} {yDomain} xDomain={[0, X_MAX]} title="Ticked functions and their tangents" description="Each ticked function is drawn on shared axes with its tangent at the chosen input." xLabel="Consumption c, or capital k for AK" xLabelShort="c (k for AK)" yLabel="u(c), or f(k) for AK" showLegend={false} interactive={false} animate={false} scaleCues={false} heightScale={1.2} grid={false} />
         {:else}
           <p class="empty-chart">Tick at least one function above to draw it.</p>
         {/if}
