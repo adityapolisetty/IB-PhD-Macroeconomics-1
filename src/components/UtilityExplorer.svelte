@@ -22,10 +22,15 @@
 
   $: curves = families.filter(f => ticked.includes(f.id)).map(f => buildCurve(f, f.id === 'ak' ? Number(productivity) : f.parameter));
   $: rows = curves.map(curve => ({ ...curve, at: oneVariable(curve.family.id, Number(c), curve.parameter) }));
-  $: series = rows.flatMap(row => [
+  // Grey dotted guides from each point to both axes; the chart clips the long downward leg.
+  $: guides = rows.flatMap(row => [
+    { id: `${row.family.id}-guide-x`, label: '', points: [{ x: Number(c), y: yDomain[0] - 1000 }, { x: Number(c), y: row.at.value }], color: 'fn-guide', width: 1.3, dasharray: '2 4' },
+    { id: `${row.family.id}-guide-y`, label: '', points: [{ x: 0, y: row.at.value }, { x: Number(c), y: row.at.value }], color: 'fn-guide', width: 1.3, dasharray: '2 4' },
+  ]);
+  $: series = [...guides, ...rows.flatMap(row => [
     { id: row.family.id, label: row.family.name, points: row.points, color: row.color, width: 3 },
     { id: `${row.family.id}-tangent`, label: `${row.family.name} tangent`, points: tangentPoints(row.at, Number(c)), color: row.color, width: 2, dash: true },
-  ]);
+  ])];
   $: markers = rows.map(row => ({ x: Number(c), y: row.at.value, color: row.color }));
   $: yDomain = fitDomain(curves);
   $: akTicked = ticked.includes('ak');
@@ -142,7 +147,7 @@
 </section>
 
 <style>
-  .lab { --fn-log: #0000cd; --fn-crra: #cb622d; --fn-cara: #00897b; --fn-quadratic: #a23b8f; --fn-ak: #262824; padding: 36px 0 70px; }
+  .lab { --fn-log: #0000cd; --fn-crra: #cb622d; --fn-cara: #00897b; --fn-quadratic: #a23b8f; --fn-ak: #262824; --fn-guide: #9a9da6; padding: 36px 0 70px; }
   .family-picks { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
   .pick { display: flex; gap: 11px; align-items: flex-start; min-width: 0; padding: 13px 15px 11px; background: #f7f8fd; border: 1px solid #e1e3ee; border-radius: 8px; cursor: pointer; transition: border-color .2s, background .2s, transform .2s; }
   .pick:hover { border-color: var(--swatch); transform: translateY(-2px); }
