@@ -21,7 +21,7 @@
   --font-heading: var(--font-body);
 }
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 110px; }
+html { font-size: 120%; scroll-behavior: smooth; scroll-padding-top: 110px; }
 body { margin: 0; color: var(--ink); background: var(--paper); font: 1.0625rem/1.75 var(--font-body); -webkit-font-smoothing: antialiased; }
 ::selection { background: var(--accent-soft); }
 a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 4px; }
