@@ -156,7 +156,7 @@
 
 <style>
   .lab { --fn-log: #0000cd; --fn-crra: #cb622d; --fn-cara: #00897b; --fn-quadratic: #a23b8f; --fn-ak: #cb622d; --fn-cobb-douglas: #0000cd; --fn-ces: #00897b; --fn-guide: #9a9da6; padding: 36px 0 70px; }
-  .explorer-title { font-size: clamp(1.9rem, 3.2vw, 2.7rem); line-height: 1.1; letter-spacing: -.035em; margin: 0 0 22px; }
+  .explorer-title { font-size: clamp(1.52rem, 2.56vw, 2.16rem); line-height: 1.1; letter-spacing: -.035em; margin: 0 0 38px; }
   .family-picks { display: grid; grid-template-columns: repeat(var(--count), minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
   .pick { display: flex; gap: 11px; align-items: flex-start; min-width: 0; padding: 13px 15px 11px; background: #f7f8fd; border: 1px solid #e1e3ee; border-radius: 8px; cursor: pointer; transition: border-color .2s, background .2s, transform .2s; }
   .pick:hover { border-color: var(--swatch); transform: translateY(-2px); }
