@@ -8,13 +8,13 @@
 
   // start: lowest input drawn; log and CRRA diverge at zero. scaled: the A slider sets the parameter.
   const kinds = {
-    utility: { title: 'Utility functions', x: 'c', fn: 'u', xLabel: 'Consumption c', yLabel: 'Utility u(c)', ticked: ['log', 'crra'], families: [
+    utility: { title: 'Utility functions', move: 'Move consumption', x: 'c', fn: 'u', xLabel: 'Consumption c', yLabel: 'Utility u(c)', ticked: ['log', 'crra'], families: [
       { id: 'log', name: 'Logarithmic', tag: 'steep near zero', parameter: 1, start: 0.25, formula: 'u(c)=\\ln c', derivative: "u'(c)=1/c", second: "u''(c)=-1/c^2" },
       { id: 'crra', name: 'CRRA', tag: 'curvature matters', parameter: 2, start: 0.25, formula: 'u(c)=1-1/c\\quad(\\sigma=2)', derivative: "u'(c)=c^{-2}", second: "u''(c)=-2c^{-3}" },
       { id: 'cara', name: 'CARA', tag: 'finite ceiling', parameter: 0.6, start: 0, formula: 'u(c)=(1-e^{-0.6c})/0.6', derivative: "u'(c)=e^{-0.6c}", second: "u''(c)=-0.6e^{-0.6c}" },
       { id: 'quadratic', name: 'Quadratic', tag: 'satiation', parameter: 0.35, start: 0, formula: 'u(c)=c-0.175c^2', derivative: "u'(c)=1-0.35c", second: "u''(c)=-0.35" },
     ] },
-    production: { title: 'Production functions', x: 'k', fn: 'f', xLabel: 'Capital per worker k', yLabel: 'Output per worker f(k)', ticked: ['ak', 'cobb-douglas', 'ces'], families: [
+    production: { title: 'Production functions', move: 'Move capital per worker deployed', x: 'k', fn: 'f', xLabel: 'Capital per worker k', yLabel: 'Output per worker f(k)', ticked: ['ak', 'cobb-douglas', 'ces'], families: [
       { id: 'ak', name: 'AK', tag: 'constant returns', scaled: true, start: 0, formula: 'f(k)=Ak', derivative: "f'(k)=A", second: "f''(k)=0" },
       { id: 'cobb-douglas', name: 'Cobb-Douglas', tag: 'diminishing returns', scaled: true, start: 0, formula: 'f(k)=Ak^{1/3}', derivative: "f'(k)=\\tfrac{A}{3}k^{-2/3}", second: "f''(k)=-\\tfrac{2A}{9}k^{-5/3}" },
       { id: 'ces', name: 'CES', tag: 'elasticity σ = 2', scaled: true, start: 0, formula: 'f(k)=A\\left(\\tfrac13\\sqrt{k}+\\tfrac23\\right)^2', derivative: "f'(k)=\\tfrac{A}{9}\\left(1+2/\\sqrt{k}\\right)", second: "f''(k)=-\\tfrac{A}{9}k^{-3/2}" },
@@ -114,7 +114,7 @@
       </div>
       <div class="transport">
         <button class="play" type="button" on:click={togglePlay} aria-label={playing ? 'Pause tangent animation' : 'Play tangent animation'}>{playing ? '❚❚' : '▶'}</button>
-        <label for="input-slider"><span>Move the tangents</span><strong>{amountSymbol} = {fmt(Number(c))}</strong></label>
+        <label for="input-slider"><span>{setup.move}</span><strong>{amountSymbol} = {fmt(Number(c))}</strong></label>
         <input id="input-slider" aria-label={setup.xLabel} type="range" min="0.5" max="7.5" step="0.05" bind:value={c} on:input={stop} style={`--progress:${((Number(c) - 0.5) / 7) * 100}%`} />
         <div class="range-ends"><span>0.5</span><span>7.5</span></div>
       </div>
