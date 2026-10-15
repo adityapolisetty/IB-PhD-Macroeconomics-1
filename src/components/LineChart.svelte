@@ -18,10 +18,11 @@
   export let interactive = true;
   export let animate = true;
   export let scaleCues = true;
+  export let heightScale = 1;
   let container, width = 720, hidden = [], hover = null, pinned = false;
   let previousXAxis = null, previousYAxis = null, xScaleChange = null, yScaleChange = null;
   let height = 350;
-  $: height = Math.max(350, Math.min(760, Math.round(width / 2.8)));
+  $: height = Math.round(heightScale * Math.max(350, Math.min(760, Math.round(width / 2.8))));
   $: margin = { top: 30, right: 18, bottom: 61, left: width < 440 ? 62 : 72 };
   $: allPoints = series.flatMap(s => s.points).filter(p => Number.isFinite(p.x + p.y));
   $: xs = [...allPoints.map(p => p.x), ...references.filter(r => r.axis === 'x').map(r => r.value)];
@@ -196,10 +197,10 @@
   .scale-cue-icon.horizontal { width: 34px; height: 29px; }
   .chart-interaction { position: relative; }
   svg { display: block; overflow: visible; }
-  .tick { font: 13px var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
-  .axis-title { font: 14px var(--font-body); fill: var(--ink); }
-  .grid { stroke: var(--rule); stroke-width: .65; }
-  .axis { stroke: var(--muted); stroke-width: .8; }
+  .tick { font: var(--chart-tick-size, 13px) var(--font-body); fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .axis-title { font: var(--chart-title-size, 14px) var(--font-body); fill: var(--ink); }
+  .grid { stroke: var(--rule); stroke-width: 1; shape-rendering: crispEdges; }
+  .axis { stroke: var(--muted); stroke-width: 1; shape-rendering: crispEdges; }
   .axis-active { stroke: var(--accent); stroke-width: 2.5; }
   .scale-grid { stroke: var(--accent); stroke-width: 1.2; }
   .scale-tick { fill: var(--accent); font-weight: 700; }

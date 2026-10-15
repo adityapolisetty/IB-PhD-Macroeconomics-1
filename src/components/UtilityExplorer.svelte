@@ -94,7 +94,7 @@
     <div class="stage-main">
       <div class="chart-frame">
         {#if rows.length}
-          <LineChart {series} {markers} {yDomain} xDomain={[0, X_MAX]} title="Ticked functions and their tangents" description="Each ticked function is drawn on shared axes with its tangent at the chosen input." xLabel="Consumption c, or capital k for AK" xLabelShort="c (k for AK)" yLabel="u(c), or f(k) for AK" showLegend={false} interactive={false} animate={false} scaleCues={false} />
+          <LineChart {series} {markers} {yDomain} xDomain={[0, X_MAX]} title="Ticked functions and their tangents" description="Each ticked function is drawn on shared axes with its tangent at the chosen input." xLabel="Consumption c, or capital k for AK" xLabelShort="c (k for AK)" yLabel="u(c), or f(k) for AK" showLegend={false} interactive={false} animate={false} scaleCues={false} heightScale={1.2} />
         {:else}
           <p class="empty-chart">Tick at least one function above to draw it.</p>
         {/if}
@@ -159,7 +159,7 @@
   .pick small { font-size: .75rem; line-height: 1.35; color: var(--muted); margin-top: 4px; }
   .stage-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(270px, .75fr); gap: 16px; align-items: stretch; }
   .stage-main, .readout { border: 1px solid var(--rule); border-radius: 12px; background: #fff; overflow: hidden; }
-  .chart-frame { padding: 20px 22px 4px; border-bottom: 1px solid var(--rule); }
+  .chart-frame { --chart-tick-size: 16px; --chart-title-size: 17px; padding: 20px 22px 4px; border-bottom: 1px solid var(--rule); }
   .empty-chart { min-height: 350px; display: grid; place-items: center; color: var(--muted); margin: 0; }
   .transport { display: grid; grid-template-columns: 42px 1fr; column-gap: 16px; padding: 18px 22px 20px; align-items: center; }
   .play { grid-row: 1 / 4; width: 42px; height: 42px; border: 1px solid var(--accent); border-radius: 50%; background: var(--accent); color: #fff; font-size: .8rem; display: grid; place-items: center; transition: transform .2s, box-shadow .2s; }
