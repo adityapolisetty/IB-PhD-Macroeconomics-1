@@ -52,7 +52,7 @@ p { margin-bottom: 1.1em; }
 .directory-heading { display: flex; align-items: center; justify-content: space-between; margin: 40px 0 20px; }
 .directory-heading h2 { font: .8rem/1.4 var(--font-body); letter-spacing: .11em; text-transform: uppercase; margin: 0; }
 .directory-heading span { font-size: .875rem; color: var(--muted); }
-.lesson-row { display: grid; grid-template-columns: 74px 1fr 320px 24px; gap: 22px; align-items: center; padding: 27px 0; border-bottom: 1px solid var(--rule); text-decoration: none; }
+.lesson-row { display: grid; grid-template-columns: 74px 1fr 24px; gap: 22px; align-items: center; padding: 27px 0; border-bottom: 1px solid var(--rule); text-decoration: none; }
 .lesson-row .number { font: 2.2rem/1 var(--font-heading); color: var(--accent); }
 .lesson-row h3 { margin: 0 0 4px; font-size: 1.65rem; }
 .lesson-row p { margin: 0; color: var(--muted); font-size: .9rem; }
