@@ -1,16 +1,17 @@
 ---
-import SiteLayout from '../layouts/SiteLayout.astro';
 import { withBase } from '../lib/lessons.js';
+// No separate home page: the site root forwards at once to the first guide page.
+const target = withBase('utility-functions/');
+const canonical = new URL(target, Astro.site).href;
 ---
-<SiteLayout>
-  <main class="home" id="main">
-    <section class="home-intro">
-      <div><p class="eyebrow">Interactive mathematics</p><h1>Macroeconomics 1</h1></div>
-    </section>
-    <section aria-labelledby="directory-title">
-      <div class="directory-heading"><h2 id="directory-title">Explore</h2></div>
-      <a class="lesson-row" href={withBase('utility-functions/')}><span class="number">01</span><div><h3>Utility functions</h3><p>Log, CRRA, CARA and quadratic utility.</p></div><span class="arrow" aria-hidden="true">↗</span></a>
-      <a class="lesson-row" href={withBase('production-functions/')}><span class="number">02</span><div><h3>Production functions</h3><p>AK, Cobb-Douglas and CES production.</p></div><span class="arrow" aria-hidden="true">↗</span></a>
-    </section>
-  </main>
-</SiteLayout>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content={`0;url=${target}`} />
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href={canonical} />
+    <title>Utility functions</title>
+  </head>
+  <body><a href={target}>Utility functions</a></body>
+</html>
