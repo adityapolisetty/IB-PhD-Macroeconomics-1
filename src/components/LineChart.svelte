@@ -17,6 +17,7 @@
   export let showLegend = true;
   export let interactive = true;
   export let animate = true;
+  export let scaleCues = true;
   let container, width = 720, hidden = [], hover = null, pinned = false;
   let previousXAxis = null, previousYAxis = null, xScaleChange = null, yScaleChange = null;
   let height = 350;
@@ -45,7 +46,7 @@
     const [min, max] = type === 'log' ? domain.map(Math.log) : domain;
     const previous = axis === 'x' ? previousXAxis : previousYAxis;
     let change = null;
-    if (previous && previous.label === label && previous.type === type) {
+    if (scaleCues && previous && previous.label === label && previous.type === type) {
       const oldSpan = previous.max - previous.min;
       const newSpan = max - min;
       const tolerance = Math.max(Math.abs(oldSpan), Math.abs(newSpan), 1) * 1e-9;
