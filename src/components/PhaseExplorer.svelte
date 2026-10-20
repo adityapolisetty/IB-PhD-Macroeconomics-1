@@ -1,7 +1,6 @@
 <script>
   import { onMount } from 'svelte';
   import { steady, limits, netOutput, velocity, saddleArms, saddleConsumption, simulate } from '../lib/phase.js';
-  export let film;
 
   const W = 960, H = 590;
   const plot = { left: 74, top: 42, width: 826, height: 480 };
@@ -26,12 +25,6 @@
       });
     }
   }
-  const presets = [
-    { label: 'Upper left', k: 5.1, c: 2.12 },
-    { label: 'Lower left', k: 5.1, c: .64 },
-    { label: 'Upper right', k: 12.4, c: 2.20 },
-    { label: 'Lower right', k: 12.4, c: .70 },
-  ];
   let k0 = 4.25;
   let c0 = saddleConsumption(k0);
   let onSaddle = true;
@@ -93,20 +86,15 @@
     animationId = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(animationId);
   });
-  $: outcomeText = onSaddle ? 'On the saddle path: both variables approach the unique steady state.'
-    : result.outcome === 'exhaustion' ? `This path heads toward capital exhaustion and leaves the visible frame after ${result.exitTime.toFixed(1)} years. It is infeasible.`
-    : result.outcome === 'overaccumulation' ? `This path heads toward overaccumulation and leaves the visible frame after ${result.exitTime.toFixed(1)} years. It fails the transversality condition.`
-    : 'This path has not exited the frame within 100 years. Its direction is shown by the local arrows.';
 </script>
 
 <section class="phase-page">
   <div class="hero">
     <div><p class="eyebrow">Chapter 03 / Neoclassical growth</p><h1>Where does the economy go?</h1></div>
-    <p>The arrows show the local direction of motion. Place the black economy marker anywhere, or choose the saddle path, and follow the next 100 years.</p>
   </div>
 
   <div class="visual-shell">
-    <div class="visual-heading"><span class="tag">THE PHASE PLANE</span><div class="field-status"><button class="flow-toggle" aria-pressed={flowing} on:click={toggleFlow}><span class:still={!flowing} class="pulse"></span>{flowing ? 'Pause flow' : 'Resume flow'}</button><span class="year">YEAR <strong>{Math.min(100, Number(year)).toFixed(1)}</strong> <span>/ 100</span></span></div></div>
+    <div class="visual-heading"><span class="tag">CLICK OR DRAG TO SET THE START</span><div class="field-status"><button class="flow-toggle" aria-pressed={flowing} on:click={toggleFlow}><span class:still={!flowing} class="pulse"></span>{flowing ? 'Pause flow' : 'Resume flow'}</button><span class="year">YEAR <strong>{Math.min(100, Number(year)).toFixed(1)}</strong> <span>/ 100</span></span></div></div>
     <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Interactive phase diagram with capital on the horizontal axis, consumption on the vertical axis, vector field, nullclines, saddle path and moving economy marker" on:pointermove={pointer} on:pointerup={() => drag = false} on:pointercancel={() => drag = false}>
       <defs><clipPath id="phase-clip"><rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} /></clipPath><marker id="phase-arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="none" stroke="#8793bd" stroke-width="1.3" /></marker></defs>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="#fbfcff" />
@@ -143,18 +131,13 @@
   </div>
 
   <div class="transport"><button class="play" on:click={() => { if (year >= (result.exitTime ?? 100)) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /><span>100 years</span></label><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button><label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={4}>4 yr/s</option><option value={8}>8 yr/s</option><option value={16}>16 yr/s</option></select></label></div>
-  <div class="controls-panel"><div class="presets"><span class="panel-label">START IN A REGION</span><div class="preset-buttons">{#each presets as preset}<button on:click={() => choose(preset.k, preset.c)}>{preset.label}</button>{/each}<button class:active={onSaddle} on:click={() => choose(k0, saddleConsumption(k0), true)}>On saddle path</button></div></div><div class="state"><span class="panel-label">CURRENT STATE</span><div class="state-values"><span>k <strong>{position.k.toFixed(2)}</strong></span><span>c <strong>{position.c.toFixed(2)}</strong></span><span>k̇ <strong>{local.dk >= 0 ? '+' : ''}{local.dk.toFixed(3)}</strong></span><span>ċ <strong>{local.dc >= 0 ? '+' : ''}{local.dc.toFixed(3)}</strong></span></div></div></div>
-  <div class="explanation" aria-live="polite"><div><span class="panel-label">WHAT THIS PATH MEANS</span><p>{outcomeText}</p></div><div class="math"><span>k̇ = k<sup>1/3</sup> − c − 0.05k</span><span>ċ/c = (k<sup>−2/3</sup>/3 − 0.08)/2</span></div></div>
-  <div class="reading"><div><h2>How to read the arrows</h2><p>Above the curved <em>k̇ = 0</em> line, consumption exceeds net output, so capital falls. Below it, capital rises. To the left of the vertical <em>ċ = 0</em> line, consumption rises; to the right, it falls. The direction at a point combines both signs.</p></div><div><h2>Why only one path converges</h2><p>Capital is inherited, while households choose initial consumption. For each starting capital stock, exactly one consumption choice lies on the blue saddle path. That path approaches <em>(k*, c*) ≈ ({steady.k.toFixed(2)}, {steady.c.toFixed(2)})</em>. A guess above it eventually exhausts capital; one below it overaccumulates.</p></div></div>
-  <details class="film"><summary>Watch the Manim study clip <span>↗</span></summary><video controls preload="none" playsinline src={film} aria-label="Manim animation of the saddle path approaching the steady state"></video><p>The rendered film shows the geometry once; use the interactive diagram above to test your own starting point and scrub through model time.</p></details>
-  <p class="footnote">Chapter 3 calibration: α = ⅓, A = 1, δ = 0.05, ρ = 0.03, σ = 2. Paths stop when they leave the visible feasible range; the chart edges are not equilibria. The saddle path is computed by integrating the nonlinear model backward from its stable eigenvector. The motion is a browser animation of the same equations, so the marker and year slider stay responsive.</p>
+  <div class="controls-panel"><div class="start-controls"><span class="panel-label">STARTING POINT</span><div class="coordinates"><label><span>Capital <em>k₀</em><strong>{Number(k0).toFixed(2)}</strong></span><input aria-label="Starting capital" type="range" min="0.25" max="19.20" step="0.05" value={k0} on:input={event => choose(Number(event.currentTarget.value), c0)} /></label><label><span>Consumption <em>c₀</em><strong>{Number(c0).toFixed(2)}</strong></span><input aria-label="Starting consumption" type="range" min="0.05" max="2.50" step="0.01" value={c0} on:input={event => choose(k0, Number(event.currentTarget.value))} /></label></div><button class="snap" class:active={onSaddle} on:click={() => choose(k0, saddleConsumption(k0), true)}>Place on saddle path</button></div><div class="state"><span class="panel-label">AT YEAR {Number(year).toFixed(1)}</span><div class="state-values"><span>k <strong>{position.k.toFixed(2)}</strong></span><span>c <strong>{position.c.toFixed(2)}</strong></span><span>k̇ <strong>{local.dk >= 0 ? '+' : ''}{local.dk.toFixed(3)}</strong></span><span>ċ <strong>{local.dc >= 0 ? '+' : ''}{local.dc.toFixed(3)}</strong></span></div></div></div>
 </section>
 
 <style>
   .phase-page { padding: 44px 0 70px; color: #1d263c; line-height: 1.5; }
-  .hero { display: grid; grid-template-columns: 1.2fr .8fr; align-items: end; gap: 40px; margin-bottom: 32px; }
+  .hero { margin-bottom: 32px; }
   .hero h1 { font-size: clamp(2.4rem, 4.5vw, 4.4rem); margin: 8px 0 0; letter-spacing: -.055em; line-height: 1.03; }
-  .hero p:last-child { max-width: 470px; margin: 0 0 4px; color: #5a6477; font-size: 1rem; }
   .visual-shell { border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
   .visual-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 18px 26px 0; }
   .field-status { display: flex; align-items: center; gap: 19px; margin-left: auto; }
@@ -183,17 +166,17 @@
   .legend span { display: inline-flex; gap: 9px; align-items: center; }.legend-arrow { font-size: 1.3rem; color: #8793bd; font-style: normal; line-height: 0; }
   .legend-line { display: inline-block; width: 22px; border-top: 3px solid; }.legend-line.grey { color: #6e8699; }.legend-line.dash { color: #7388a5; border-style: dashed; }.legend-line.blue { color: #0000cd; }.legend-dot { width: 11px; height: 11px; border-radius: 50%; background: #111318; }
   .transport { display: flex; align-items: center; gap: 19px; padding: 21px 3px; border-bottom: 1px solid #e6eaf1; }
-  button { transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease; }.transport button:hover,.preset-buttons button:hover { transform: translateY(-2px); }
+  button { transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease; }.transport button:hover,.snap:hover { transform: translateY(-2px); }
   .play { border: 0; background: #0000cd; color: white; width: 48px; height: 48px; flex: 0 0 auto; border-radius: 50%; font-size: 1rem; padding-left: 4px; }
   .timeline { flex: 1; display: flex; align-items: center; gap: 13px; color: #5d6880; font-size: .75rem; white-space: nowrap; }.timeline input { min-width: 0; }
   .reset { border: 1px solid #d8dfed; background: white; border-radius: 8px; padding: 8px 13px; font-size: .75rem; }
   .speed { display: flex; align-items: center; gap: 7px; font-size: .75rem; color: #5d6880; }.speed select { width: auto; border-radius: 7px; background: white; border-color: #d8dfed; color: #1d263c; font-size: .75rem; }
-  .controls-panel { display: grid; grid-template-columns: 1.45fr 1fr; gap: 30px; padding: 25px 0; border-bottom: 1px solid #e6eaf1; }.preset-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }.preset-buttons button { border: 1px solid #d7deec; background: #fff; border-radius: 999px; font-size: .73rem; padding: 8px 12px; }.preset-buttons button.active { color: #0000cd; background: #eeeeff; border-color: #b8bafa; }
+  .controls-panel { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 30px; padding: 25px 0; border-bottom: 1px solid #e6eaf1; }
+  .coordinates { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; margin: 13px 0; }
+  .coordinates label { display: grid; gap: 5px; color: #64708a; font-size: .77rem; }.coordinates label span { display: flex; align-items: baseline; gap: 6px; }.coordinates em { font-style: italic; color: #3b4963; }.coordinates strong { margin-left: auto; color: #0000cd; font-size: .9rem; font-variant-numeric: tabular-nums; }
+  .snap { border: 1px solid #c7cef1; background: #fff; color: #0000cd; border-radius: 999px; font-size: .74rem; padding: 7px 12px; }.snap.active { background: #eeeeff; border-color: #b8bafa; }
   .state-values { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 13px; font-size: .8rem; color: #738095; }.state-values strong { color: #1d263c; margin-left: 4px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .explanation { display: grid; grid-template-columns: 1fr auto; gap: 25px; align-items: center; padding: 24px 26px; margin: 24px 0 42px; border-radius: 12px; background: #f1f3ff; border-left: 3px solid #0000cd; }.explanation p { margin: 7px 0 0; font-size: .91rem; }.math { display: grid; gap: 5px; color: #3f4b69; font-size: .77rem; white-space: nowrap; }
-  .reading { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }.reading h2 { font-size: 1.5rem; margin-bottom: 10px; }.reading p { color: #566177; font-size: .89rem; line-height: 1.65; }.footnote { border-top: 1px solid #e6eaf1; margin-top: 22px; padding-top: 17px; color: #7a8496; font-size: .73rem; line-height: 1.6; }
-  .film { margin-top: 25px; border: 1px solid #dce3f0; border-radius: 10px; padding: 14px 18px; }.film summary { font-size: .82rem; font-weight: 600; color: #0000cd; cursor: pointer; }.film summary span { float: right; }.film video { display: block; width: 100%; max-width: 920px; margin: 18px auto 0; border-radius: 8px; border: 1px solid #e4e8f2; }.film p { margin: 10px 0 0; color: #64708a; font-size: .75rem; }
-  @media(max-width:850px) { .hero,.controls-panel,.explanation,.reading { grid-template-columns: 1fr; gap: 15px; }.hero { margin-bottom: 23px; }.phase-page { padding-top: 27px; }.math { white-space: normal; } }
+  @media(max-width:850px) { .controls-panel { grid-template-columns: 1fr; gap: 25px; }.hero { margin-bottom: 23px; }.phase-page { padding-top: 27px; } }
   @media(max-width:550px) { .transport { flex-wrap: wrap; }.timeline { order: 3; flex-basis: 100%; }.speed { margin-left: auto; }.legend { gap: 8px 14px; padding: 4px 14px 14px; }.visual-heading { padding: 10px 14px 0; }.field-status { gap: 8px; }.flow-toggle { font-size: .62rem; padding: 4px 7px; }.label { font-size: 14px; } }
   @media(prefers-reduced-motion:reduce) { button { transition: none; } }
 </style>
