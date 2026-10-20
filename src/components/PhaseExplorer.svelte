@@ -28,12 +28,12 @@
   $: ticksC = ticks(0, m.limits.c, 6);
   $: arrows = field(m, X, Y);
 
-  // Unit direction of motion on an evenly spaced 14 x 7 grid, with a staggered flow timing per arrow.
+  // Unit direction of motion on an evenly spaced 15 x 8 grid, with a staggered flow timing per arrow.
   function field(m, X, Y) {
     const out = [];
-    for (let i = 0; i < 14; i++) {
-      for (let j = 0; j < 7; j++) {
-        const k = m.limits.k * (i + .5) / 14, c = m.limits.c * (j + .5) / 7;
+    for (let i = 0; i < 15; i++) {
+      for (let j = 0; j < 8; j++) {
+        const k = m.limits.k * (i + .5) / 15, c = m.limits.c * (j + .5) / 8;
         const v = m.velocity(k, c);
         const dx = v.dk / m.limits.k * plot.width, dy = -v.dc / m.limits.c * plot.height;
         const length = Math.hypot(dx, dy);
@@ -48,7 +48,7 @@
   }
   // Small arrow (shaft and open head) pointing along the flow, drawn around the origin.
   const pt = (a, along, across) => `${(along * a.ux - across * a.uy).toFixed(2)},${(along * a.uy + across * a.ux).toFixed(2)}`;
-  const head = a => `M${pt(a, -6, 0)} L${pt(a, 6, 0)} M${pt(a, 2, 3.5)} L${pt(a, 6, 0)} L${pt(a, 2, -3.5)}`;
+  const head = a => `M${pt(a, -4.2, 0)} L${pt(a, 4.2, 0)} M${pt(a, 1.4, 2.45)} L${pt(a, 4.2, 0)} L${pt(a, 1.4, -2.45)}`;
 
   // The start is stored relative to the steady state so it survives parameter changes.
   let kRel = .5, cRel = null;
@@ -120,15 +120,15 @@
     <span class="hint">Click or drag on the plot to set the start</span>
     </div>
     <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Interactive phase diagram with capital on the horizontal axis, consumption on the vertical axis, vector field, nullclines, saddle path and moving economy marker" on:pointermove={pointer} on:pointerup={() => drag = false} on:pointercancel={() => drag = false}>
-      <defs><clipPath id="phase-clip"><rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} /></clipPath><marker id="phase-arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="none" stroke="#8793bd" stroke-width="1.3" /></marker></defs>
+      <defs><clipPath id="phase-clip"><rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} /></clipPath><marker id="phase-arrow" markerWidth="3.5" markerHeight="3.5" refX="2.8" refY="1.75" orient="auto"><path d="M0,0 L3.5,1.75 L0,3.5" fill="none" stroke="#8793bd" stroke-width="1.3" /></marker></defs>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="#fbfcff" />
       {#each ticksK as tick}<line x1={X(tick)} x2={X(tick)} y1={plot.top} y2={plot.top + plot.height} class="grid" /><text x={X(tick)} y={plot.top + plot.height + 22} class="tick" text-anchor="middle">{tick}</text>{/each}
       {#each ticksC as tick}<line x1={plot.left} x2={plot.left + plot.width} y1={Y(tick)} y2={Y(tick)} class="grid" /><text x={plot.left - 12} y={Y(tick) + 4} class="tick" text-anchor="end">{tick.toFixed(1)}</text>{/each}
       <g clip-path="url(#phase-clip)">
         {#each arrows as a}
-          <line x1={a.x-6.5*a.ux} y1={a.y-6.5*a.uy} x2={a.x+6.5*a.ux} y2={a.y+6.5*a.uy} class="vector" marker-end="url(#phase-arrow)" />
+          <line x1={a.x-4.55*a.ux} y1={a.y-4.55*a.uy} x2={a.x+4.55*a.ux} y2={a.y+4.55*a.uy} class="vector" marker-end="url(#phase-arrow)" />
           <path class="flow-arrow" d={head(a)} opacity="0">
-            <animateTransform attributeName="transform" type="translate" from={`${a.x-6.5*a.ux} ${a.y-6.5*a.uy}`} to={`${a.x+6.5*a.ux} ${a.y+6.5*a.uy}`} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
+            <animateTransform attributeName="transform" type="translate" from={`${a.x-4.55*a.ux} ${a.y-4.55*a.uy}`} to={`${a.x+4.55*a.ux} ${a.y+4.55*a.uy}`} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
             <animate attributeName="opacity" values="0;.95;.95;0" keyTimes="0;.18;.78;1" dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
           </path>
         {/each}
