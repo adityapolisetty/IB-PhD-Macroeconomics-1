@@ -1,10 +1,12 @@
-import { growthParameters, growthSteady } from './models.js';
+import { growthParameters } from './models.js';
 
-const { alpha, A, delta, rho, sigma } = growthParameters;
-export const steady = growthSteady;
-export const limits = { k: 19.5, c: 2.55 };
-export const netOutput = k => A * Math.max(0, k) ** alpha - delta * k;
-export function velocity(k, c) {
+// Build the phase diagram for one parameter set; the axes centre on the steady state.
+export function makePhase({ alpha, A, delta, rho, sigma }) {
+const k = (alpha * A / (delta + rho)) ** (1 / (1 - alpha));
+const steady = { k, c: A * k ** alpha - delta * k };
+const limits = { k: 2.3 * steady.k, c: 2 * steady.c };
+const netOutput = k => A * Math.max(0, k) ** alpha - delta * k;
+function velocity(k, c) {
   const kk = Math.max(k, 1e-9);
   return { dk: netOutput(kk) - c, dc: c * (alpha * A * kk ** (alpha - 1) - delta - rho) / sigma };
 }
@@ -27,21 +29,21 @@ function arm(sign) {
   const points = [{ ...point, backTime: 0 }];
   for (let i = 1; i <= 24000; i++) {
     const next = step(point, -.02);
-    if (!Number.isFinite(next.k + next.c) || next.k < .08 || next.k > limits.k || next.c < .01 || next.c > limits.c) break;
+    if (!Number.isFinite(next.k + next.c) || next.k < .01 * steady.k || next.k > limits.k || next.c < .01 || next.c > limits.c) break;
     point = next;
     points.push({ ...point, backTime: i * .02 });
   }
   return points;
 }
-export const saddleArms = { left: arm(-1), right: arm(1) };
-export function saddleConsumption(k) {
+const saddleArms = { left: arm(-1), right: arm(1) };
+function saddleConsumption(k) {
   const points = k < steady.k ? saddleArms.left : saddleArms.right;
   const exact = points.findIndex(p => (k < steady.k ? p.k <= k : p.k >= k));
   if (exact < 1) return exact === 0 ? points[0].c : steady.c;
   const a = points[exact - 1], b = points[exact];
   return a.c + (b.c - a.c) * (k - a.k) / (b.k - a.k);
 }
-export function simulate(k0, c0, onSaddle = false) {
+function simulate(k0, c0, onSaddle = false) {
   if (onSaddle) {
     // Forward integration of a saddle is numerically unstable. Traverse the
     // backwards-computed arm toward the steady state instead.
@@ -91,3 +93,8 @@ export function simulate(k0, c0, onSaddle = false) {
   }
   return { trajectory, outcome, plotExitTime, depletionTime, exhaustionC };
 }
+return { steady, limits, netOutput, velocity, saddleArms, saddleConsumption, simulate };
+}
+
+const base = makePhase(growthParameters);
+export const { steady, limits, netOutput, velocity, saddleArms, saddleConsumption, simulate } = base;

@@ -16,8 +16,13 @@ if (!pages.some(page => page.slug === current)) throw new Error(`Unknown guide p
 <SiteLayout title={title} description={description}>
   <div class="guide-shell">
     <aside class="guide-index" aria-label="Pages">
-      <p class="index-title">Contents</p>
-      <nav>
+      <div class="index-head">
+        <button class="index-toggle" type="button" aria-label="Toggle contents" aria-expanded="true" aria-controls="guide-nav">
+          <span></span><span></span><span></span>
+        </button>
+        <p class="index-title">Contents</p>
+      </div>
+      <nav id="guide-nav">
         {pages.map((page, i) => (
           <a href={withBase(`${page.slug}/`)} aria-current={page.slug === current ? 'page' : undefined}>
             <span class="index-number">{String(i + 1).padStart(2, '0')}</span>
@@ -30,7 +35,31 @@ if (!pages.some(page => page.slug === current)) throw new Error(`Unknown guide p
   </div>
 </SiteLayout>
 
+<script>
+  // Collapse the contents column; the choice is remembered in this browser only.
+  const shell = document.querySelector('.guide-shell');
+  const toggle = document.querySelector('.index-toggle');
+  const apply = collapsed => {
+    shell.classList.toggle('collapsed', collapsed);
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+  };
+  try { apply(localStorage.getItem('guide-contents-collapsed') === '1'); } catch {}
+  toggle.addEventListener('click', () => {
+    const collapsed = !shell.classList.contains('collapsed');
+    apply(collapsed);
+    try { localStorage.setItem('guide-contents-collapsed', collapsed ? '1' : '0'); } catch {}
+  });
+</script>
+
 <style>
+  .index-head { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+  .index-head .index-title { margin: 0; }
+  .index-toggle { display: grid; gap: 3px; width: 28px; height: 28px; place-content: center; padding: 0; border: 1px solid var(--rule); border-radius: 7px; background: white; cursor: pointer; }
+  .index-toggle span { display: block; width: 14px; height: 2px; border-radius: 1px; background: var(--ink); }
+  .index-toggle:hover { border-color: var(--accent); }.index-toggle:hover span { background: var(--accent); }
+  .guide-shell.collapsed { grid-template-columns: 28px minmax(0, 1fr); gap: 40px; }
+  .guide-shell.collapsed .index-title, .guide-shell.collapsed nav { display: none; }
+  .guide-shell.collapsed .guide-main { max-width: none; }
   .guide-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 110px; padding: 0 40px 90px 32px; }
   .guide-index { position: sticky; top: 28px; align-self: start; padding-top: 36px; }
   .index-title { font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }

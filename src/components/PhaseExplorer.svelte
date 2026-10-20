@@ -1,75 +1,90 @@
 <script>
   import { onMount } from 'svelte';
-  import { steady, limits, netOutput, velocity, saddleArms, saddleConsumption, simulate } from '../lib/phase.js';
+  import { ticks } from 'd3';
+  import { makePhase } from '../lib/phase.js';
+  import { growthParameters } from '../lib/models.js';
 
-  const W = 960, H = 590;
-  const plot = { left: 74, top: 42, width: 826, height: 480 };
-  const X = k => plot.left + k / limits.k * plot.width;
-  const Y = c => plot.top + plot.height - c / limits.c * plot.height;
-  const path = points => points.map((p, i) => `${i ? 'L' : 'M'}${X(p.k).toFixed(2)},${Y(p.c).toFixed(2)}`).join(' ');
-  const curve = Array.from({ length: 321 }, (_, i) => ({ k: limits.k * i / 320, c: netOutput(limits.k * i / 320) }));
-  const arms = [saddleArms.left, saddleArms.right].map(points => path([...points].reverse()));
-  const ticksK = [0, 4, 8, 12, 16, 19];
-  const ticksC = [0, .5, 1, 1.5, 2, 2.5];
-  const arrows = [];
-  for (let k = 1.05; k <= 18.6; k += 1.35) {
-    for (let c = .24; c <= 2.38; c += .32) {
-      const v = velocity(k, c);
-      const dx = v.dk / limits.k * plot.width;
-      const dy = -v.dc / limits.c * plot.height;
-      const length = Math.hypot(dx, dy);
-      if (length > .001) arrows.push({
-        x: X(k), y: Y(c), dx: 13 * dx / length, dy: 13 * dy / length,
-        duration: Math.max(1.1, Math.min(3.2, 42 / (length + 5))),
-        delay: -((Math.round(k * 19 + c * 31) % 13) / 13) * 2.7,
-      });
+  const W = 960, H = 540;
+  const plot = { left: 74, top: 14, width: 860, height: 470 };
+  const sliders = [
+    { key: 'alpha', label: 'α', min: .2, max: .5, step: .01 },
+    { key: 'A', label: 'A', min: .5, max: 2, step: .05 },
+    { key: 'delta', label: 'δ', min: .01, max: .15, step: .005 },
+    { key: 'rho', label: 'ρ', min: .01, max: .1, step: .005 },
+    { key: 'sigma', label: 'σ', min: .5, max: 5, step: .1 },
+  ];
+  let params = { ...growthParameters };
+  let m, X, Y, path, curve, arms, ticksK, ticksC, arrows;
+  $: m = makePhase(params);
+  $: X = k => plot.left + k / m.limits.k * plot.width;
+  $: Y = c => plot.top + plot.height - c / m.limits.c * plot.height;
+  $: path = points => points.map((p, i) => `${i ? 'L' : 'M'}${X(p.k).toFixed(2)},${Y(p.c).toFixed(2)}`).join(' ');
+  $: curve = Array.from({ length: 321 }, (_, i) => ({ k: m.limits.k * i / 320, c: m.netOutput(m.limits.k * i / 320) }));
+  $: arms = [m.saddleArms.left, m.saddleArms.right].map(points => path([...points].reverse()));
+  $: ticksK = ticks(0, m.limits.k, 6);
+  $: ticksC = ticks(0, m.limits.c, 6);
+  $: arrows = field(m, X, Y);
+
+  // Unit direction of motion on a 13 x 7 grid, with a staggered flow timing per arrow.
+  function field(m, X, Y) {
+    const out = [];
+    for (let i = 0; i < 13; i++) {
+      for (let j = 0; j < 7; j++) {
+        const k = m.limits.k * (.054 + i * .069), c = m.limits.c * (.094 + j * .135);
+        const v = m.velocity(k, c);
+        const dx = v.dk / m.limits.k * plot.width, dy = -v.dc / m.limits.c * plot.height;
+        const length = Math.hypot(dx, dy);
+        if (length > .001) out.push({
+          x: X(k), y: Y(c), ux: dx / length, uy: dy / length,
+          duration: Math.max(1.1, Math.min(3.2, 42 / (length + 5))),
+          delay: -(((i * 7 + j * 5) % 13) / 13) * 2.7,
+        });
+      }
     }
+    return out;
   }
-  let k0 = 4.25;
-  let c0 = saddleConsumption(k0);
-  let onSaddle = true;
+  // Small filled arrowhead pointing along the flow, drawn around the origin.
+  const head = a => `M${(5 * a.ux).toFixed(2)},${(5 * a.uy).toFixed(2)} L${(-4 * a.ux - 3.5 * a.uy).toFixed(2)},${(-4 * a.uy + 3.5 * a.ux).toFixed(2)} L${(-4 * a.ux + 3.5 * a.uy).toFixed(2)},${(-4 * a.uy - 3.5 * a.ux).toFixed(2)} Z`;
+
+  // The start is stored relative to the steady state so it survives parameter changes.
+  let kRel = .5, cRel = null;
   let year = 0;
   let playing = false;
-  let flowing = true;
   let speed = 0.5;
   let drag = false;
   let chart;
   let lastFrame = 0;
-  let result;
-  let position;
-  let visible;
-  let local;
-  $: result = simulate(Number(k0), Number(c0), onSaddle);
+  let k0, c0, result, position, visible, markerC, plotK, plotC;
+  $: k0 = kRel * m.steady.k;
+  $: c0 = cRel === null ? m.saddleConsumption(k0) : cRel * m.steady.c;
+  $: result = m.simulate(k0, c0, cRel === null);
   $: position = atYear(result.trajectory, Number(year));
   $: visible = result.trajectory.filter(p => p.t <= Number(year) && p.c !== null);
-  $: local = position.c === null ? null : velocity(position.k, position.c);
   $: markerC = position.c === null ? result.exhaustionC : position.c;
-  const plotK = k => Math.max(plot.left + 9, Math.min(plot.left + plot.width - 9, X(k)));
-  const plotC = c => Math.max(plot.top + 9, Math.min(plot.top + plot.height - 9, Y(c)));
+  $: plotK = k => Math.max(plot.left + 9, Math.min(plot.left + plot.width - 9, X(k)));
+  $: plotC = c => Math.max(plot.top + 9, Math.min(plot.top + plot.height - 9, Y(c)));
 
   function atYear(points, t) {
     if (t >= points[points.length - 1].t) return points[points.length - 1];
     let lo = 0, hi = points.length - 1;
-    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (points[m].t <= t) lo = m; else hi = m; }
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (points[mid].t <= t) lo = mid; else hi = mid; }
     const a = points[lo], b = points[hi], w = (t - a.t) / (b.t - a.t);
     return { t, k: a.k + w * (b.k - a.k), c: a.c === null || b.c === null ? null : a.c + w * (b.c - a.c) };
   }
   function choose(k, c, stable = false) {
     playing = false; year = 0;
-    k0 = Math.max(.25, Math.min(limits.k - .3, k));
-    c0 = stable ? saddleConsumption(k0) : Math.max(.05, Math.min(limits.c - .05, c));
-    onSaddle = stable;
+    kRel = Math.max(.02 * m.limits.k, Math.min(.98 * m.limits.k, k)) / m.steady.k;
+    cRel = stable ? null : Math.max(.02 * m.limits.c, Math.min(.98 * m.limits.c, c)) / m.steady.c;
   }
-  function toggleFlow() {
-    flowing = !flowing;
-    if (chart) flowing ? chart.unpauseAnimations() : chart.pauseAnimations();
+  function setParam(key, value) {
+    playing = false; year = 0;
+    params = { ...params, [key]: value };
   }
   function pointer(event) {
     if (!drag || !chart) return;
     const p = chart.createSVGPoint(); p.x = event.clientX; p.y = event.clientY;
     const q = p.matrixTransform(chart.getScreenCTM().inverse());
-    choose((q.x - plot.left) / plot.width * limits.k, (plot.top + plot.height - q.y) / plot.height * limits.c);
-    drag = true;
+    choose((q.x - plot.left) / plot.width * m.limits.k, (plot.top + plot.height - q.y) / plot.height * m.limits.c);
   }
   function frame(now) {
     if (playing && lastFrame) {
@@ -81,82 +96,75 @@
   }
   let animationId;
   onMount(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      flowing = false;
-      chart?.pauseAnimations();
-    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) chart?.pauseAnimations();
     animationId = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(animationId);
   });
 </script>
 
 <section class="phase-page">
-  <div class="hero">
-    <div><p class="eyebrow">Chapter 03 / Neoclassical growth</p><h1>Where does the economy go?</h1></div>
-  </div>
+  <div class="hero"><h1>Phase diagram - Neo-classical growth</h1></div>
 
   <div class="visual-shell">
-    <div class="visual-heading"><span class="tag">CLICK OR DRAG TO SET THE START</span><div class="field-status"><button class="flow-toggle" aria-pressed={flowing} on:click={toggleFlow}><span class:still={!flowing} class="pulse"></span>{flowing ? 'Pause flow' : 'Resume flow'}</button><span class="year">YEAR <strong>{Math.min(100, Number(year)).toFixed(1)}</strong> <span>/ 100</span></span></div></div>
+    <div class="params">{#each sliders as s}<label><span><em>{s.label}</em><strong>{Number(params[s.key]).toFixed(s.step < .01 ? 3 : 2)}</strong></span><input aria-label={`Parameter ${s.key}`} type="range" min={s.min} max={s.max} step={s.step} value={params[s.key]} on:input={event => setParam(s.key, Number(event.currentTarget.value))} /></label>{/each}</div>
     <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Interactive phase diagram with capital on the horizontal axis, consumption on the vertical axis, vector field, nullclines, saddle path and moving economy marker" on:pointermove={pointer} on:pointerup={() => drag = false} on:pointercancel={() => drag = false}>
       <defs><clipPath id="phase-clip"><rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} /></clipPath><marker id="phase-arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="none" stroke="#8793bd" stroke-width="1.3" /></marker></defs>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="#fbfcff" />
-      {#each ticksK as tick}<line x1={X(tick)} x2={X(tick)} y1={plot.top} y2={plot.top + plot.height} class="grid" /><text x={X(tick)} y={plot.top + plot.height + 25} class="tick" text-anchor="middle">{tick}</text>{/each}
-      {#each ticksC as tick}<line x1={plot.left} x2={plot.left + plot.width} y1={Y(tick)} y2={Y(tick)} class="grid" /><text x={plot.left - 15} y={Y(tick) + 4} class="tick" text-anchor="end">{tick.toFixed(1)}</text>{/each}
+      {#each ticksK as tick}<line x1={X(tick)} x2={X(tick)} y1={plot.top} y2={plot.top + plot.height} class="grid" /><text x={X(tick)} y={plot.top + plot.height + 22} class="tick" text-anchor="middle">{tick}</text>{/each}
+      {#each ticksC as tick}<line x1={plot.left} x2={plot.left + plot.width} y1={Y(tick)} y2={Y(tick)} class="grid" /><text x={plot.left - 12} y={Y(tick) + 4} class="tick" text-anchor="end">{tick.toFixed(1)}</text>{/each}
       <g clip-path="url(#phase-clip)">
         {#each arrows as a}
-          <line x1={a.x-a.dx/2} y1={a.y-a.dy/2} x2={a.x+a.dx/2} y2={a.y+a.dy/2} class="vector" marker-end="url(#phase-arrow)" />
-          <circle class="flow-particle" cx={a.x-a.dx/2} cy={a.y-a.dy/2} r="2.4" opacity="0">
-            <animate attributeName="cx" from={a.x-a.dx/2} to={a.x+a.dx/2} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
-            <animate attributeName="cy" from={a.y-a.dy/2} to={a.y+a.dy/2} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
+          <line x1={a.x-6.5*a.ux} y1={a.y-6.5*a.uy} x2={a.x+6.5*a.ux} y2={a.y+6.5*a.uy} class="vector" marker-end="url(#phase-arrow)" />
+          <path class="flow-arrow" d={head(a)} opacity="0">
+            <animateTransform attributeName="transform" type="translate" from={`${a.x-6.5*a.ux} ${a.y-6.5*a.uy}`} to={`${a.x+6.5*a.ux} ${a.y+6.5*a.uy}`} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
             <animate attributeName="opacity" values="0;.95;.95;0" keyTimes="0;.18;.78;1" dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
-          </circle>
+          </path>
         {/each}
         <path d={path(curve)} class="nullcline" />
-        <line x1={X(steady.k)} x2={X(steady.k)} y1={plot.top} y2={plot.top+plot.height} class="consumption-line" />
+        <line x1={X(m.steady.k)} x2={X(m.steady.k)} y1={plot.top} y2={plot.top+plot.height} class="consumption-line" />
         {#each arms as arm}<path d={arm} class="saddle" />{/each}
         {#if visible.length > 1}<path d={path(visible)} class="trail" />{/if}
         <circle cx={X(k0)} cy={Y(c0)} r="5" fill="#fff" stroke="#191b20" stroke-width="2" />
         <circle cx={plotK(position.k)} cy={plotC(markerC)} r="14" fill="#171923" opacity=".12" />
-        <circle cx={X(steady.k)} cy={Y(steady.c)} r="10" fill="#d43a48" stroke="#fff" stroke-width="2" />
+        <circle cx={X(m.steady.k)} cy={Y(m.steady.c)} r="10" fill="#d43a48" stroke="#fff" stroke-width="2" />
         <circle cx={plotK(position.k)} cy={plotC(markerC)} r="7.5" fill="#111318" stroke="#fff" stroke-width="2" />
       </g>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="transparent" class="interaction" on:pointerdown={event => { drag = true; event.currentTarget.setPointerCapture(event.pointerId); pointer(event); }} on:pointerup={() => drag = false} />
-      <line x1={plot.left} y1={plot.top+plot.height} x2={plot.left+plot.width} y2={plot.top+plot.height} class="axis" /><line x1={plot.left} y1={plot.top} x2={plot.left} y2={plot.top+plot.height} class="axis" />
-      <text x={plot.left+plot.width/2} y={H-12} class="axis-label" text-anchor="middle">Capital per worker, k</text>
+      <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} class="frame" />
+      <text x={plot.left+plot.width/2} y={H-8} class="axis-label" text-anchor="middle">Capital per worker, k</text>
       <text transform={`translate(19 ${plot.top+plot.height/2}) rotate(-90)`} class="axis-label" text-anchor="middle">Consumption per worker, c</text>
-      <text x={X(steady.k)+9} y={plot.top+21} class="label blue">ċ = 0</text>
-      <text x={X(15)} y={Y(netOutput(15))+26} class="label slate">k̇ = 0</text>
-      <text x={X(3.0)} y={Y(saddleConsumption(3.0))+34} class="label blue">saddle path</text>
-      <text x={X(steady.k)+14} y={Y(steady.c)-14} class="label red">steady state</text>
+      <text x={X(m.steady.k)+9} y={plot.top+21} class="label blue">ċ = 0</text>
+      <text x={X(.77 * m.limits.k)} y={Y(m.netOutput(.77 * m.limits.k))+26} class="label slate">k̇ = 0</text>
+      <text x={X(.35 * m.steady.k)} y={Y(m.saddleConsumption(.35 * m.steady.k))+34} class="label blue">saddle path</text>
+      <text x={X(m.steady.k)+14} y={Y(m.steady.c)-14} class="label red">steady state</text>
     </svg>
-    <div class="legend"><span><i class="legend-arrow">↗</i> flowing vectors</span><span><i class="legend-line grey"></i> k̇ = 0</span><span><i class="legend-line dash"></i> ċ = 0</span><span><i class="legend-line blue"></i> saddle path</span><span><i class="legend-dot steady"></i> steady state</span><span><i class="legend-dot"></i> economy</span></div>
+    <div class="legend"><span><i class="legend-arrow">↗</i> flowing vectors</span><span><i class="legend-line grey"></i> k̇ = 0</span><span><i class="legend-line dash"></i> ċ = 0</span><span><i class="legend-line blue"></i> saddle path</span><span><i class="legend-dot steady"></i> steady state</span><span><i class="legend-dot"></i> economy</span><span class="hint">Click or drag on the plot to set the start</span></div>
   </div>
 
-  <div class="transport"><button class="play" on:click={() => { if (year >= 100) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /><span>100 years</span></label><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button><label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option></select></label></div>
-  <div class="controls-panel"><div class="start-controls"><span class="panel-label">STARTING POINT</span><div class="coordinates"><label><span>Capital <em>k₀</em><strong>{Number(k0).toFixed(2)}</strong></span><input aria-label="Starting capital" type="range" min="0.25" max="19.20" step="0.05" value={k0} on:input={event => choose(Number(event.currentTarget.value), c0)} /></label><label><span>Consumption <em>c₀</em><strong>{Number(c0).toFixed(2)}</strong></span><input aria-label="Starting consumption" type="range" min="0.05" max="2.50" step="0.01" value={c0} on:input={event => choose(k0, Number(event.currentTarget.value))} /></label></div><button class="snap" class:active={onSaddle} on:click={() => choose(k0, saddleConsumption(k0), true)}>Place on saddle path</button></div><div class="state"><span class="panel-label">AT YEAR {Number(year).toFixed(1)}</span><div class="state-values"><span>k <strong>{position.k.toFixed(2)}</strong></span><span>c <strong>{position.c === null ? '—' : position.c.toFixed(2)}</strong></span><span>k̇ <strong>{local === null ? '—' : `${local.dk >= 0 ? '+' : ''}${local.dk.toFixed(3)}`}</strong></span><span>ċ <strong>{local === null ? '—' : `${local.dc >= 0 ? '+' : ''}${local.dc.toFixed(3)}`}</strong></span></div>{#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > limits.k || position.c > limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}</div></div>
+  <div class="transport"><button class="play" on:click={() => { if (year >= 100) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /></label><span class="year">YEAR <strong>{Math.min(100, Number(year)).toFixed(1)}</strong><span class="kc">k <b>{position.k.toFixed(2)}</b></span><span class="kc">c <b>{position.c === null ? '-' : position.c.toFixed(2)}</b></span></span><button class="snap" class:active={cRel === null} on:click={() => choose(k0, 0, true)}>Place on saddle path</button><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button><label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option></select></label></div>
+  {#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > m.limits.k || position.c > m.limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}
 </section>
 
 <style>
-  .phase-page { padding: 44px 0 70px; color: #1d263c; line-height: 1.5; }
-  .hero { margin-bottom: 32px; }
-  .hero h1 { font-size: clamp(2.4rem, 4.5vw, 4.4rem); margin: 8px 0 0; letter-spacing: -.055em; line-height: 1.03; }
+  .phase-page { padding: 14px 0 10px; color: #1d263c; line-height: 1.5; }
+  .hero { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.2rem, 2.25vw, 2.2rem); margin: 0; letter-spacing: -.04em; line-height: 1.1; }
   .visual-shell { border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
-  .visual-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 18px 26px 0; }
-  .field-status { display: flex; align-items: center; gap: 19px; margin-left: auto; }
-  .flow-toggle { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #dce3f0; border-radius: 999px; background: #f7f8ff; color: #42517b; padding: 5px 10px; font-size: .69rem; line-height: 1; white-space: nowrap; }
-  .flow-toggle:hover { background: #eeefff; border-color: #bfc6f6; }
-  .pulse { width: 7px; height: 7px; border-radius: 50%; background: #0000cd; box-shadow: 0 0 0 3px #e4e5ff; }
-  .pulse.still { background: #8b94a5; box-shadow: none; }
-  .tag,.panel-label { color: #66718a; font-size: .64rem; font-weight: 700; letter-spacing: .14em; }
-  .year { font-size: .76rem; color: #687590; letter-spacing: .11em; font-variant-numeric: tabular-nums; }
-  .year strong { color: #0000cd; font-size: 1.28rem; letter-spacing: -.03em; }
-  svg { width: 100%; height: auto; display: block; touch-action: none; }
+  .params { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px 22px; padding: 12px 26px 4px; }
+  .params label { display: grid; gap: 2px; color: #64708a; font-size: .77rem; }
+  .params label span { display: flex; align-items: baseline; gap: 6px; }
+  .params em { font-style: italic; color: #3b4963; font-size: .95rem; }
+  .params strong { margin-left: auto; color: #0000cd; font-size: .85rem; font-variant-numeric: tabular-nums; }
+  .year { display: inline-flex; align-items: baseline; gap: 10px; font-size: .76rem; color: #687590; letter-spacing: .11em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .year strong { color: #0000cd; font-size: 1.15rem; letter-spacing: -.03em; min-width: 3.2ch; }
+  .kc { letter-spacing: 0; font-size: .82rem; }.kc b { color: #1d263c; font-weight: 600; margin-left: 3px; }
+  svg { width: 100%; height: auto; max-height: calc(100vh - 290px); min-height: 300px; display: block; touch-action: none; }
   .grid { stroke: #edf1f8; stroke-width: 1; }
   .tick { font: 14px 'Source Sans Pro', sans-serif; fill: #8790a4; }
-  .axis { stroke: #8691a7; stroke-width: 1.5; }
+  .frame { fill: none; stroke: #8691a7; stroke-width: 1.5; pointer-events: none; }
   .axis-label { font: 16px 'Source Sans Pro', sans-serif; fill: #4f5a70; }
   .vector { stroke: #98a5c7; stroke-width: 1.35; opacity: .74; }
-  .flow-particle { fill: #3348dc; pointer-events: none; }
+  .flow-arrow { fill: #3348dc; pointer-events: none; }
   .nullcline { fill: none; stroke: #6e8699; stroke-width: 3.2; }
   .consumption-line { stroke: #7388a5; stroke-width: 2.5; stroke-dasharray: 7 6; }
   .saddle { fill: none; stroke: #0000cd; stroke-width: 4; opacity: .9; }
@@ -164,22 +172,19 @@
   .label { font: 600 16px 'Source Sans Pro', sans-serif; paint-order: stroke; stroke: #fbfcff; stroke-width: 5; }
   .label.blue { fill: #0000cd; }.label.slate { fill: #60758b; }.label.red { fill: #d43a48; }
   .interaction { cursor: crosshair; }
-  .legend { display: flex; flex-wrap: wrap; gap: 16px 26px; padding: 4px 28px 20px; font-size: .73rem; color: #64708a; }
-  .legend span { display: inline-flex; gap: 9px; align-items: center; }.legend-arrow { font-size: 1.3rem; color: #8793bd; font-style: normal; line-height: 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 26px; padding: 2px 28px 10px; font-size: .73rem; color: #64708a; }
+  .legend span { display: inline-flex; gap: 9px; align-items: center; }.legend-arrow { font-size: 1.3rem; color: #3348dc; font-style: normal; line-height: 0; }
+  .legend .hint { margin-left: auto; font-style: italic; }
   .legend-line { display: inline-block; width: 22px; border-top: 3px solid; }.legend-line.grey { color: #6e8699; }.legend-line.dash { color: #7388a5; border-style: dashed; }.legend-line.blue { color: #0000cd; }.legend-dot { width: 11px; height: 11px; border-radius: 50%; background: #111318; }.legend-dot.steady { background: #d43a48; }
-  .transport { display: flex; align-items: center; gap: 19px; padding: 21px 3px; border-bottom: 1px solid #e6eaf1; }
-  button { transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease; }.transport button:hover,.snap:hover { transform: translateY(-2px); }
-  .play { border: 0; background: #0000cd; color: white; width: 48px; height: 48px; flex: 0 0 auto; border-radius: 50%; font-size: 1rem; padding-left: 4px; }
-  .timeline { flex: 1; display: flex; align-items: center; gap: 13px; color: #5d6880; font-size: .75rem; white-space: nowrap; }.timeline input { min-width: 0; }
-  .reset { border: 1px solid #d8dfed; background: white; border-radius: 8px; padding: 8px 13px; font-size: .75rem; }
+  .transport { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 3px; }
+  button { transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease; }.transport button:hover { transform: translateY(-2px); }
+  .play { border: 0; background: #0000cd; color: white; width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; font-size: .95rem; padding-left: 4px; }
+  .timeline { flex: 1; display: flex; align-items: center; gap: 13px; color: #5d6880; font-size: .75rem; white-space: nowrap; }.timeline input { flex: 1; min-width: 120px; }
+  .reset { border: 1px solid #d8dfed; background: white; border-radius: 8px; padding: 7px 12px; font-size: .75rem; white-space: nowrap; }
+  .snap { border: 1px solid #c7cef1; background: #fff; color: #0000cd; border-radius: 999px; font-size: .74rem; padding: 7px 12px; white-space: nowrap; }.snap.active { background: #eeeeff; border-color: #b8bafa; }
   .speed { display: flex; align-items: center; gap: 7px; font-size: .75rem; color: #5d6880; }.speed select { width: auto; border-radius: 7px; background: white; border-color: #d8dfed; color: #1d263c; font-size: .75rem; }
-  .controls-panel { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 30px; padding: 25px 0; border-bottom: 1px solid #e6eaf1; }
-  .coordinates { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; margin: 13px 0; }
-  .coordinates label { display: grid; gap: 5px; color: #64708a; font-size: .77rem; }.coordinates label span { display: flex; align-items: baseline; gap: 6px; }.coordinates em { font-style: italic; color: #3b4963; }.coordinates strong { margin-left: auto; color: #0000cd; font-size: .9rem; font-variant-numeric: tabular-nums; }
-  .snap { border: 1px solid #c7cef1; background: #fff; color: #0000cd; border-radius: 999px; font-size: .74rem; padding: 7px 12px; }.snap.active { background: #eeeeff; border-color: #b8bafa; }
-  .state-values { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 13px; font-size: .8rem; color: #738095; }.state-values strong { color: #1d263c; margin-left: 4px; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .status-note { display: block; margin-top: 10px; color: #9b4a4f; font-size: .72rem; line-height: 1.4; }
-  @media(max-width:850px) { .controls-panel { grid-template-columns: 1fr; gap: 25px; }.hero { margin-bottom: 23px; }.phase-page { padding-top: 27px; } }
-  @media(max-width:550px) { .transport { flex-wrap: wrap; }.timeline { order: 3; flex-basis: 100%; }.speed { margin-left: auto; }.legend { gap: 8px 14px; padding: 4px 14px 14px; }.visual-heading { padding: 10px 14px 0; }.field-status { gap: 8px; }.flow-toggle { font-size: .62rem; padding: 4px 7px; }.label { font-size: 14px; } }
+  .status-note { display: block; color: #9b4a4f; font-size: .72rem; line-height: 1.4; }
+  @media(max-width:850px) { .params { grid-template-columns: repeat(3, minmax(0, 1fr)); }.transport { flex-wrap: wrap; }.timeline { order: 3; flex-basis: 100%; } }
+  @media(max-width:550px) { .params { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px 14px 4px; }.legend { gap: 8px 14px; padding: 4px 14px 14px; }.label { font-size: 14px; } }
   @media(prefers-reduced-motion:reduce) { button { transition: none; } }
 </style>
