@@ -31,7 +31,7 @@
   let year = 0;
   let playing = false;
   let flowing = true;
-  let speed = 8;
+  let speed = 0.5;
   let drag = false;
   let chart;
   let lastFrame = 0;
@@ -41,15 +41,18 @@
   let local;
   $: result = simulate(Number(k0), Number(c0), onSaddle);
   $: position = atYear(result.trajectory, Number(year));
-  $: visible = result.trajectory.filter(p => p.t <= Number(year));
-  $: local = velocity(position.k, position.c);
+  $: visible = result.trajectory.filter(p => p.t <= Number(year) && p.c !== null);
+  $: local = position.c === null ? null : velocity(position.k, position.c);
+  $: markerC = position.c === null ? result.exhaustionC : position.c;
+  const plotK = k => Math.max(plot.left + 9, Math.min(plot.left + plot.width - 9, X(k)));
+  const plotC = c => Math.max(plot.top + 9, Math.min(plot.top + plot.height - 9, Y(c)));
 
   function atYear(points, t) {
     if (t >= points[points.length - 1].t) return points[points.length - 1];
     let lo = 0, hi = points.length - 1;
     while (hi - lo > 1) { const m = (lo + hi) >> 1; if (points[m].t <= t) lo = m; else hi = m; }
     const a = points[lo], b = points[hi], w = (t - a.t) / (b.t - a.t);
-    return { t, k: a.k + w * (b.k - a.k), c: a.c + w * (b.c - a.c) };
+    return { t, k: a.k + w * (b.k - a.k), c: a.c === null || b.c === null ? null : a.c + w * (b.c - a.c) };
   }
   function choose(k, c, stable = false) {
     playing = false; year = 0;
@@ -70,9 +73,8 @@
   }
   function frame(now) {
     if (playing && lastFrame) {
-      const limit = result.exitTime ?? 100;
-      year = Math.min(limit, Number(year) + Math.min((now - lastFrame) / 1000, .1) * speed);
-      if (year >= limit) playing = false;
+      year = Math.min(100, Number(year) + Math.min((now - lastFrame) / 1000, .1) * Number(speed));
+      if (year >= 100) playing = false;
     }
     lastFrame = now;
     animationId = requestAnimationFrame(frame);
@@ -114,9 +116,9 @@
         {#each arms as arm}<path d={arm} class="saddle" />{/each}
         {#if visible.length > 1}<path d={path(visible)} class="trail" />{/if}
         <circle cx={X(k0)} cy={Y(c0)} r="5" fill="#fff" stroke="#191b20" stroke-width="2" />
-        <circle cx={X(position.k)} cy={Y(position.c)} r="14" fill="#171923" opacity=".12" />
+        <circle cx={plotK(position.k)} cy={plotC(markerC)} r="14" fill="#171923" opacity=".12" />
         <circle cx={X(steady.k)} cy={Y(steady.c)} r="10" fill="#d43a48" stroke="#fff" stroke-width="2" />
-        <circle cx={X(position.k)} cy={Y(position.c)} r="7.5" fill="#111318" stroke="#fff" stroke-width="2" />
+        <circle cx={plotK(position.k)} cy={plotC(markerC)} r="7.5" fill="#111318" stroke="#fff" stroke-width="2" />
       </g>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="transparent" class="interaction" on:pointerdown={event => { drag = true; event.currentTarget.setPointerCapture(event.pointerId); pointer(event); }} on:pointerup={() => drag = false} />
       <line x1={plot.left} y1={plot.top+plot.height} x2={plot.left+plot.width} y2={plot.top+plot.height} class="axis" /><line x1={plot.left} y1={plot.top} x2={plot.left} y2={plot.top+plot.height} class="axis" />
@@ -130,8 +132,8 @@
     <div class="legend"><span><i class="legend-arrow">↗</i> flowing vectors</span><span><i class="legend-line grey"></i> k̇ = 0</span><span><i class="legend-line dash"></i> ċ = 0</span><span><i class="legend-line blue"></i> saddle path</span><span><i class="legend-dot steady"></i> steady state</span><span><i class="legend-dot"></i> economy</span></div>
   </div>
 
-  <div class="transport"><button class="play" on:click={() => { if (year >= (result.exitTime ?? 100)) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /><span>100 years</span></label><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button><label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={4}>4 yr/s</option><option value={8}>8 yr/s</option><option value={16}>16 yr/s</option></select></label></div>
-  <div class="controls-panel"><div class="start-controls"><span class="panel-label">STARTING POINT</span><div class="coordinates"><label><span>Capital <em>k₀</em><strong>{Number(k0).toFixed(2)}</strong></span><input aria-label="Starting capital" type="range" min="0.25" max="19.20" step="0.05" value={k0} on:input={event => choose(Number(event.currentTarget.value), c0)} /></label><label><span>Consumption <em>c₀</em><strong>{Number(c0).toFixed(2)}</strong></span><input aria-label="Starting consumption" type="range" min="0.05" max="2.50" step="0.01" value={c0} on:input={event => choose(k0, Number(event.currentTarget.value))} /></label></div><button class="snap" class:active={onSaddle} on:click={() => choose(k0, saddleConsumption(k0), true)}>Place on saddle path</button></div><div class="state"><span class="panel-label">AT YEAR {Number(year).toFixed(1)}</span><div class="state-values"><span>k <strong>{position.k.toFixed(2)}</strong></span><span>c <strong>{position.c.toFixed(2)}</strong></span><span>k̇ <strong>{local.dk >= 0 ? '+' : ''}{local.dk.toFixed(3)}</strong></span><span>ċ <strong>{local.dc >= 0 ? '+' : ''}{local.dc.toFixed(3)}</strong></span></div></div></div>
+  <div class="transport"><button class="play" on:click={() => { if (year >= 100) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /><span>100 years</span></label><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button><label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option></select></label></div>
+  <div class="controls-panel"><div class="start-controls"><span class="panel-label">STARTING POINT</span><div class="coordinates"><label><span>Capital <em>k₀</em><strong>{Number(k0).toFixed(2)}</strong></span><input aria-label="Starting capital" type="range" min="0.25" max="19.20" step="0.05" value={k0} on:input={event => choose(Number(event.currentTarget.value), c0)} /></label><label><span>Consumption <em>c₀</em><strong>{Number(c0).toFixed(2)}</strong></span><input aria-label="Starting consumption" type="range" min="0.05" max="2.50" step="0.01" value={c0} on:input={event => choose(k0, Number(event.currentTarget.value))} /></label></div><button class="snap" class:active={onSaddle} on:click={() => choose(k0, saddleConsumption(k0), true)}>Place on saddle path</button></div><div class="state"><span class="panel-label">AT YEAR {Number(year).toFixed(1)}</span><div class="state-values"><span>k <strong>{position.k.toFixed(2)}</strong></span><span>c <strong>{position.c === null ? '—' : position.c.toFixed(2)}</strong></span><span>k̇ <strong>{local === null ? '—' : `${local.dk >= 0 ? '+' : ''}${local.dk.toFixed(3)}`}</strong></span><span>ċ <strong>{local === null ? '—' : `${local.dc >= 0 ? '+' : ''}${local.dc.toFixed(3)}`}</strong></span></div>{#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > limits.k || position.c > limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}</div></div>
 </section>
 
 <style>
@@ -176,6 +178,7 @@
   .coordinates label { display: grid; gap: 5px; color: #64708a; font-size: .77rem; }.coordinates label span { display: flex; align-items: baseline; gap: 6px; }.coordinates em { font-style: italic; color: #3b4963; }.coordinates strong { margin-left: auto; color: #0000cd; font-size: .9rem; font-variant-numeric: tabular-nums; }
   .snap { border: 1px solid #c7cef1; background: #fff; color: #0000cd; border-radius: 999px; font-size: .74rem; padding: 7px 12px; }.snap.active { background: #eeeeff; border-color: #b8bafa; }
   .state-values { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 13px; font-size: .8rem; color: #738095; }.state-values strong { color: #1d263c; margin-left: 4px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .status-note { display: block; margin-top: 10px; color: #9b4a4f; font-size: .72rem; line-height: 1.4; }
   @media(max-width:850px) { .controls-panel { grid-template-columns: 1fr; gap: 25px; }.hero { margin-bottom: 23px; }.phase-page { padding-top: 27px; } }
   @media(max-width:550px) { .transport { flex-wrap: wrap; }.timeline { order: 3; flex-basis: 100%; }.speed { margin-left: auto; }.legend { gap: 8px 14px; padding: 4px 14px 14px; }.visual-heading { padding: 10px 14px 0; }.field-status { gap: 8px; }.flow-toggle { font-size: .62rem; padding: 4px 7px; }.label { font-size: 14px; } }
   @media(prefers-reduced-motion:reduce) { button { transition: none; } }

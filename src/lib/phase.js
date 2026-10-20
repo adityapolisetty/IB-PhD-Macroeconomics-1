@@ -64,23 +64,30 @@ export function simulate(k0, c0, onSaddle = false) {
       }
     }
     trajectory[0] = { t: 0, k: k0, c: c0 };
-    return { trajectory, outcome: 'stable', exitTime: null };
+    return { trajectory, outcome: 'stable', plotExitTime: null, depletionTime: null, exhaustionC: null };
   }
   let point = { k: k0, c: c0 };
   const trajectory = [{ t: 0, ...point }];
-  let outcome = 'horizon', exitTime = null;
+  const outcome = c0 < saddleConsumption(k0) ? 'overaccumulation' : 'exhaustion';
+  let plotExitTime = null, depletionTime = null, exhaustionC = null;
   const dt = .05;
   for (let i = 1; i <= 2000; i++) {
-    const next = step(point, dt);
     const t = i * dt;
-    if (!Number.isFinite(next.k + next.c) || next.k <= .08 || next.c >= limits.c) {
-      outcome = 'exhaustion'; exitTime = t; break;
+    if (depletionTime !== null) {
+      trajectory.push({ t, k: 0, c: null });
+      continue;
     }
-    if (next.c <= .01 || next.k >= limits.k) {
-      outcome = 'overaccumulation'; exitTime = t; break;
+    const next = step(point, dt);
+    if (!Number.isFinite(next.k + next.c) || next.k <= 0) {
+      depletionTime = t;
+      if (plotExitTime === null) plotExitTime = depletionTime;
+      exhaustionC = point.c;
+      trajectory.push({ t, k: 0, c: null });
+      continue;
     }
+    if (plotExitTime === null && (next.k >= limits.k || next.c >= limits.c || next.c <= 0)) plotExitTime = t;
     point = next;
     trajectory.push({ t, ...point });
   }
-  return { trajectory, outcome, exitTime };
+  return { trajectory, outcome, plotExitTime, depletionTime, exhaustionC };
 }

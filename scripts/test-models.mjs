@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { solow, household, shoot, bisectShooting, stableConsumption, growthSteady, bellman, bellmanGrid } from '../src/lib/models.js';
-import { steady, netOutput, velocity, saddleConsumption, simulate } from '../src/lib/phase.js';
+import { steady, limits, netOutput, velocity, saddleConsumption, simulate } from '../src/lib/phase.js';
 const near = (actual, expected, tolerance = 1e-10) => assert.ok(Math.abs(actual - expected) < tolerance, `${actual} differs from ${expected}`);
 const cases = [];
 function check(name, fn) { fn(); cases.push(name); }
@@ -56,8 +56,16 @@ check('Chapter 3 phase directions and 100-year saddle path', () => {
   assert.equal(stable.outcome, 'stable');
   assert.ok(Math.abs(stable.trajectory.at(-1).t - 100) < 1e-8);
   assert.ok(Math.abs(stable.trajectory.at(-1).k - steady.k) < .02);
-  assert.equal(simulate(k0, c0 + .1).outcome, 'exhaustion');
-  assert.equal(simulate(k0, c0 - .1).outcome, 'overaccumulation');
+  const high = simulate(k0, c0 + .1), low = simulate(k0, c0 - .1);
+  assert.equal(high.outcome, 'exhaustion');
+  assert.equal(low.outcome, 'overaccumulation');
+  near(high.trajectory.at(-1).t, 100);
+  near(low.trajectory.at(-1).t, 100);
+  assert.ok(low.plotExitTime > 0 && low.plotExitTime < 100);
+  assert.ok(low.trajectory.at(-1).k > limits.k);
+  assert.ok(low.trajectory.at(-1).c < low.trajectory.find(p => p.t >= low.plotExitTime).c);
+  assert.ok(high.depletionTime > 0 && high.depletionTime < 100);
+  assert.deepEqual({ k: high.trajectory.at(-1).k, c: high.trajectory.at(-1).c }, { k: 0, c: null });
 });
 check('Bellman feasibility, maximisers and contraction', () => {
   const initial = bellman();
