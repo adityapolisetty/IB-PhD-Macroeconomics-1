@@ -94,11 +94,16 @@
     playing = false; year = 0;
     params = { ...params, [key]: value };
   }
+  let hover = null;
   function pointer(event) {
-    if (!drag || !chart) return;
+    if (!chart) return;
     const p = chart.createSVGPoint(); p.x = event.clientX; p.y = event.clientY;
     const q = p.matrixTransform(chart.getScreenCTM().inverse());
-    choose((q.x - plot.left) / plot.width * m.limits.k, (plot.top + plot.height - q.y) / plot.height * m.limits.c);
+    const inside = q.x >= plot.left && q.x <= plot.left + plot.width && q.y >= plot.top && q.y <= plot.top + plot.height;
+    const k = (q.x - plot.left) / plot.width * m.limits.k, c = (plot.top + plot.height - q.y) / plot.height * m.limits.c;
+    // Hover readout of the coordinates under the cursor; dragging also moves the start.
+    hover = inside ? { x: q.x, y: q.y, k, c } : null;
+    if (drag) choose(k, c);
   }
   function frame(now) {
     if (playing && lastFrame) {
@@ -130,7 +135,7 @@
     {#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > m.limits.k || position.c > m.limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}
     <span class="hint">Click or drag on the plot to set the start</span>
     </div>
-    <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Interactive phase diagram with capital on the horizontal axis, consumption on the vertical axis, vector field, nullclines, saddle path and moving economy marker" on:pointermove={pointer} on:pointerup={() => drag = false} on:pointercancel={() => drag = false}>
+    <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Interactive phase diagram with capital on the horizontal axis, consumption on the vertical axis, vector field, nullclines, saddle path and moving economy marker" on:pointermove={pointer} on:pointerup={() => drag = false} on:pointercancel={() => drag = false} on:pointerleave={() => hover = null}>
       <defs><clipPath id="phase-clip"><rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} /></clipPath><marker id="phase-arrow" markerWidth="3.5" markerHeight="3.5" refX="2.8" refY="1.75" orient="auto"><path d="M0,0 L3.5,1.75 L0,3.5" fill="none" stroke="#8793bd" stroke-width="1.3" /></marker></defs>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="#fbfcff" />
       {#each ticksK as tick}<line x1={X(tick)} x2={X(tick)} y1={plot.top} y2={plot.top + plot.height} class="grid" /><text x={X(tick)} y={plot.top + plot.height + 22} class="tick" text-anchor="middle">{tick}</text>{/each}
@@ -154,6 +159,12 @@
       </g>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="transparent" class="interaction" on:pointerdown={event => { drag = true; event.currentTarget.setPointerCapture(event.pointerId); pointer(event); }} on:pointerup={() => drag = false} />
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} class="frame" />
+      {#if hover}
+        <g class="hover" pointer-events="none">
+          <line x1={plot.left} x2={plot.left + plot.width} y1={hover.y} y2={hover.y} /><line x1={hover.x} x2={hover.x} y1={plot.top} y2={plot.top + plot.height} />
+          <text x={hover.x + (hover.x > plot.left + plot.width - 130 ? -10 : 10)} y={hover.y + (hover.y < plot.top + 30 ? 22 : -10)} text-anchor={hover.x > plot.left + plot.width - 130 ? 'end' : 'start'}>k = {hover.k.toFixed(2)}, c = {hover.c.toFixed(2)}</text>
+        </g>
+      {/if}
       <text x={plot.left+plot.width/2} y={H-8} class="axis-label" text-anchor="middle">Capital per worker, k</text>
       <text transform={`translate(19 ${plot.top+plot.height/2}) rotate(-90)`} class="axis-label" text-anchor="middle">Consumption per worker, c</text>
       <text x={X(m.steady.k)+9} y={plot.top+21} class="label blue">ċ = 0</text>
@@ -194,6 +205,8 @@
   .label { font: 600 16px 'Source Sans Pro', sans-serif; paint-order: stroke; stroke: #fbfcff; stroke-width: 5; }
   .label.blue { fill: #184199; }.label.slate { fill: #60758b; }.label.red { fill: #bf3441; }
   .interaction { cursor: crosshair; }
+  .hover line { stroke: #111318; stroke-width: 1; stroke-dasharray: 3 4; opacity: .45; }
+  .hover text { font: 600 14px 'Source Sans Pro', sans-serif; fill: #111318; paint-order: stroke; stroke: #fbfcff; stroke-width: 4; }
   .transport { display: flex; align-items: center; gap: 12px; }
   .buttons { display: flex; gap: 8px; }
   .hint { color: #111318; font-size: .72rem; font-style: italic; }
