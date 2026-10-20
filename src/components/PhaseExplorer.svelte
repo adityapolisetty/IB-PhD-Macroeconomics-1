@@ -106,7 +106,15 @@
   <div class="hero"><h1>Phase diagram - Neo-classical growth</h1></div>
 
   <div class="visual-shell">
+    <div class="controls">
     <div class="params">{#each sliders as s}<label><span><em>{s.label}</em><strong>{Number(params[s.key]).toFixed(s.step < .01 ? 3 : 2)}</strong></span><input aria-label={`Parameter ${s.key}`} type="range" min={s.min} max={s.max} step={s.step} value={params[s.key]} on:input={event => setParam(s.key, Number(event.currentTarget.value))} /></label>{/each}</div>
+    <div class="transport"><button class="play" on:click={() => { if (year >= 100) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /></label></div>
+    <div class="year">YEAR <strong>{Math.min(100, Number(year)).toFixed(1)}</strong><span class="kc">k <b>{position.k.toFixed(2)}</b></span><span class="kc">c <b>{position.c === null ? '-' : position.c.toFixed(2)}</b></span></div>
+    <div class="buttons"><button class="snap" class:active={cRel === null} on:click={() => choose(k0, 0, true)}>Place on saddle path</button><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button></div>
+    <label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option></select></label>
+    {#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > m.limits.k || position.c > m.limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}
+    <span class="hint">Click or drag on the plot to set the start</span>
+    </div>
     <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Interactive phase diagram with capital on the horizontal axis, consumption on the vertical axis, vector field, nullclines, saddle path and moving economy marker" on:pointermove={pointer} on:pointerup={() => drag = false} on:pointercancel={() => drag = false}>
       <defs><clipPath id="phase-clip"><rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} /></clipPath><marker id="phase-arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="none" stroke="#8793bd" stroke-width="1.3" /></marker></defs>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="#fbfcff" />
@@ -138,27 +146,24 @@
       <text x={X(.35 * m.steady.k)} y={Y(m.saddleConsumption(.35 * m.steady.k))+34} class="label blue">saddle path</text>
       <text x={X(m.steady.k)+14} y={Y(m.steady.c)-14} class="label red">steady state</text>
     </svg>
-    <div class="legend"><span><i class="legend-arrow">↗</i> flowing vectors</span><span><i class="legend-line grey"></i> k̇ = 0</span><span><i class="legend-line dash"></i> ċ = 0</span><span><i class="legend-line blue"></i> saddle path</span><span><i class="legend-dot steady"></i> steady state</span><span><i class="legend-dot"></i> economy</span><span class="hint">Click or drag on the plot to set the start</span></div>
   </div>
-
-  <div class="transport"><button class="play" on:click={() => { if (year >= 100) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /></label><span class="year">YEAR <strong>{Math.min(100, Number(year)).toFixed(1)}</strong><span class="kc">k <b>{position.k.toFixed(2)}</b></span><span class="kc">c <b>{position.c === null ? '-' : position.c.toFixed(2)}</b></span></span><button class="snap" class:active={cRel === null} on:click={() => choose(k0, 0, true)}>Place on saddle path</button><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button><label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option></select></label></div>
-  {#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > m.limits.k || position.c > m.limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}
 </section>
 
 <style>
   .phase-page { padding: 14px 0 10px; color: #1d263c; line-height: 1.5; }
   .hero { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 10px; }
-  .hero h1 { font-size: clamp(1.2rem, 2.25vw, 2.2rem); margin: 0; letter-spacing: -.04em; line-height: 1.1; }
-  .visual-shell { border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
-  .params { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px 22px; padding: 12px 26px 4px; }
+  .hero h1 { font-size: calc(clamp(1.2rem, 2.25vw, 2.2rem) - 2pt); margin: 0; letter-spacing: -.04em; line-height: 1.1; }
+  .visual-shell { display: grid; grid-template-columns: 320px minmax(0, 1fr); align-items: center; border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
+  .controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; padding: 18px 18px 18px 22px; border-right: 1px solid #e6eaf1; }
+  .params { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
   .params label { display: grid; gap: 2px; color: #64708a; font-size: .77rem; }
   .params label span { display: flex; align-items: baseline; gap: 6px; }
   .params em { font-style: italic; color: #3b4963; font-size: .95rem; }
   .params strong { margin-left: auto; color: #0000cd; font-size: .85rem; font-variant-numeric: tabular-nums; }
-  .year { display: inline-flex; align-items: baseline; gap: 10px; font-size: .76rem; color: #687590; letter-spacing: .11em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .year { display: flex; align-items: baseline; gap: 10px; font-size: .76rem; color: #687590; letter-spacing: .11em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .year strong { color: #0000cd; font-size: 1.15rem; letter-spacing: -.03em; min-width: 3.2ch; }
   .kc { letter-spacing: 0; font-size: .82rem; }.kc b { color: #1d263c; font-weight: 600; margin-left: 3px; }
-  svg { width: 100%; height: auto; max-height: calc(100vh - 290px); min-height: 300px; display: block; touch-action: none; }
+  svg { width: 100%; height: auto; max-height: calc(100vh - 150px); min-height: 300px; display: block; touch-action: none; }
   .grid { stroke: #edf1f8; stroke-width: 1; }
   .tick { font: 14px 'Source Sans Pro', sans-serif; fill: #8790a4; }
   .frame { fill: none; stroke: #8691a7; stroke-width: 1.5; pointer-events: none; }
@@ -172,19 +177,17 @@
   .label { font: 600 16px 'Source Sans Pro', sans-serif; paint-order: stroke; stroke: #fbfcff; stroke-width: 5; }
   .label.blue { fill: #0000cd; }.label.slate { fill: #60758b; }.label.red { fill: #d43a48; }
   .interaction { cursor: crosshair; }
-  .legend { display: flex; flex-wrap: wrap; gap: 6px 26px; padding: 2px 28px 10px; font-size: .73rem; color: #64708a; }
-  .legend span { display: inline-flex; gap: 9px; align-items: center; }.legend-arrow { font-size: 1.3rem; color: #3348dc; font-style: normal; line-height: 0; }
-  .legend .hint { margin-left: auto; font-style: italic; }
-  .legend-line { display: inline-block; width: 22px; border-top: 3px solid; }.legend-line.grey { color: #6e8699; }.legend-line.dash { color: #7388a5; border-style: dashed; }.legend-line.blue { color: #0000cd; }.legend-dot { width: 11px; height: 11px; border-radius: 50%; background: #111318; }.legend-dot.steady { background: #d43a48; }
-  .transport { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 3px; }
+  .transport { display: flex; align-items: center; gap: 12px; }
+  .buttons { display: flex; gap: 8px; }
+  .hint { color: #8790a4; font-size: .72rem; font-style: italic; }
   button { transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease; }.transport button:hover { transform: translateY(-2px); }
   .play { border: 0; background: #0000cd; color: white; width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; font-size: .95rem; padding-left: 4px; }
-  .timeline { flex: 1; display: flex; align-items: center; gap: 13px; color: #5d6880; font-size: .75rem; white-space: nowrap; }.timeline input { flex: 1; min-width: 120px; }
+  .timeline { flex: 1; display: flex; align-items: center; gap: 13px; color: #5d6880; font-size: .75rem; white-space: nowrap; }.timeline input { flex: 1; min-width: 0; }
   .reset { border: 1px solid #d8dfed; background: white; border-radius: 8px; padding: 7px 12px; font-size: .75rem; white-space: nowrap; }
   .snap { border: 1px solid #c7cef1; background: #fff; color: #0000cd; border-radius: 999px; font-size: .74rem; padding: 7px 12px; white-space: nowrap; }.snap.active { background: #eeeeff; border-color: #b8bafa; }
   .speed { display: flex; align-items: center; gap: 7px; font-size: .75rem; color: #5d6880; }.speed select { width: auto; border-radius: 7px; background: white; border-color: #d8dfed; color: #1d263c; font-size: .75rem; }
   .status-note { display: block; color: #9b4a4f; font-size: .72rem; line-height: 1.4; }
-  @media(max-width:850px) { .params { grid-template-columns: repeat(3, minmax(0, 1fr)); }.transport { flex-wrap: wrap; }.timeline { order: 3; flex-basis: 100%; } }
-  @media(max-width:550px) { .params { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px 14px 4px; }.legend { gap: 8px 14px; padding: 4px 14px 14px; }.label { font-size: 14px; } }
+  @media(max-width:850px) { .visual-shell { grid-template-columns: 1fr; }.controls { border-right: 0; border-bottom: 1px solid #e6eaf1; } }
+  @media(max-width:550px) { .label { font-size: 14px; } }
   @media(prefers-reduced-motion:reduce) { button { transition: none; } }
 </style>
