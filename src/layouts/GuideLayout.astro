@@ -8,6 +8,7 @@ const { title, description, current } = Astro.props;
 const pages = [
   { slug: 'utility-functions', label: 'Utility functions' },
   { slug: 'production-functions', label: 'Production functions' },
+  { slug: 'phase-diagram', label: 'Phase diagram' },
 ];
 if (!pages.some(page => page.slug === current)) throw new Error(`Unknown guide page: ${current}`);
 ---

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { solow, household, shoot, bisectShooting, stableConsumption, growthSteady, bellman, bellmanGrid } from '../src/lib/models.js';
+import { steady, netOutput, velocity, saddleConsumption, simulate } from '../src/lib/phase.js';
 const near = (actual, expected, tolerance = 1e-10) => assert.ok(Math.abs(actual - expected) < tolerance, `${actual} differs from ${expected}`);
 const cases = [];
 function check(name, fn) { fn(); cases.push(name); }
@@ -32,6 +33,31 @@ check('Shooting failures, bracket halving and stable trajectory', () => {
   assert.ok(c0 > .94 && c0 < .95);
   assert.ok(Math.abs(path.at(-1).x - growthSteady.k) < .02);
   assert.ok(Math.abs(path.at(-1).y - growthSteady.c) < .003);
+});
+check('Chapter 3 phase directions and 100-year saddle path', () => {
+  near(steady.k, growthSteady.k);
+  near(steady.c, growthSteady.c);
+  near(velocity(steady.k, steady.c).dk, 0);
+  near(velocity(steady.k, steady.c).dc, 0);
+  const left = 5, right = 12;
+  for (const [k, c, dk, dc] of [
+    [left, netOutput(left) + .3, -1, 1],
+    [left, netOutput(left) - .3, 1, 1],
+    [right, netOutput(right) + .3, -1, -1],
+    [right, netOutput(right) - .3, 1, -1],
+  ]) {
+    const v = velocity(k, c);
+    assert.equal(Math.sign(v.dk), dk);
+    assert.equal(Math.sign(v.dc), dc);
+  }
+  const k0 = 4.25, c0 = saddleConsumption(k0);
+  assert.ok(Math.abs(c0 - 1.182) < .002);
+  const stable = simulate(k0, c0, true);
+  assert.equal(stable.outcome, 'stable');
+  assert.ok(Math.abs(stable.trajectory.at(-1).t - 100) < 1e-8);
+  assert.ok(Math.abs(stable.trajectory.at(-1).k - steady.k) < .02);
+  assert.equal(simulate(k0, c0 + .1).outcome, 'exhaustion');
+  assert.equal(simulate(k0, c0 - .1).outcome, 'overaccumulation');
 });
 check('Bellman feasibility, maximisers and contraction', () => {
   const initial = bellman();

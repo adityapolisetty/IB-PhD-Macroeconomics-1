@@ -1,0 +1,9 @@
+---
+import GuideLayout from '../layouts/GuideLayout.astro';
+import PhaseExplorer from '../components/PhaseExplorer.svelte';
+import { withBase } from '../lib/lessons.js';
+---
+
+<GuideLayout title="Neoclassical phase diagram" description="Follow capital and consumption through the Chapter 3 Ramsey phase diagram over 100 years." current="phase-diagram">
+  <PhaseExplorer film={withBase('phase/saddle-path.mp4')} client:load />
+</GuideLayout>

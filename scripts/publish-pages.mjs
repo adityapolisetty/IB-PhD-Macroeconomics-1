@@ -66,7 +66,14 @@ for (const name of readdirSync(publishDir)) {
   if (!target.startsWith(publishDir + sep)) throw new Error('Invalid generated file path.');
   rmSync(target, { recursive: true, force: true });
 }
-cpSync(join(root, 'dist'), publishDir, { recursive: true });
+const distRoot = resolve(root, 'dist');
+cpSync(distRoot, publishDir, {
+  recursive: true,
+  filter: source => source === distRoot || !(
+    resolve(source).startsWith(distRoot + sep)
+    && resolve(source).slice(distRoot.length + 1).split(sep)[0] === '.prerender'
+  )
+});
 writeFileSync(join(publishDir, '.nojekyll'), '');
 git(['add', '--all'], publishDir);
 if (git(['diff', '--cached', '--quiet'], publishDir, [0, 1]).status === 1) {
