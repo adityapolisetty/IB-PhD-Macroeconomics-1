@@ -169,7 +169,7 @@
       <text transform={`translate(19 ${plot.top+plot.height/2}) rotate(-90)`} class="axis-label" text-anchor="middle">Consumption per worker, c</text>
       <text x={X(m.steady.k)+9} y={plot.top+21} class="label blue">ċ = 0</text>
       <text x={X(.77 * m.limits.k)} y={Y(m.netOutput(.77 * m.limits.k))+26} class="label slate">k̇ = 0</text>
-      <text x={X(.35 * m.steady.k)} y={Y(m.saddleConsumption(.35 * m.steady.k))+34} class="label blue">saddle path</text>
+      <text x={X(.35 * m.steady.k)} y={Y(m.saddleConsumption(.35 * m.steady.k))+34} class="label">saddle path</text>
       <text x={X(m.steady.k)+14} y={Y(m.steady.c)-14} class="label red">steady state</text>
     </svg>
   </div>
@@ -201,7 +201,7 @@
   .flow-arrow { fill: none; stroke: #184199; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
   .nullcline { fill: none; stroke: #6e8699; stroke-width: 3.2; }
   .consumption-line { stroke: #7388a5; stroke-width: 2.5; stroke-dasharray: 7 6; }
-  .saddle { fill: none; stroke: #184199; stroke-width: 4; opacity: .9; }
+  .saddle { fill: none; stroke: #111318; stroke-width: 4; opacity: .9; }
   .trail { fill: none; stroke: #e49350; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
   .label { font: 600 16px 'Source Sans Pro', sans-serif; paint-order: stroke; stroke: #fbfcff; stroke-width: 5; }
   .label.blue { fill: #184199; }.label.slate { fill: #60758b; }.label.red { fill: #bf3441; }
