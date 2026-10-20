@@ -153,7 +153,7 @@
 </section>
 
 <style>
-  .phase-page { padding: 14px 0 10px; color: #1d263c; line-height: 1.5; }
+  .phase-page { padding: 36px 0 10px; color: #1d263c; line-height: 1.5; }
   .hero { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 10px; }
   .hero h1 { font-size: calc(clamp(1.2rem, 2.25vw, 2.2rem) - 2pt); margin: 0; letter-spacing: -.04em; line-height: 1.1; }
   .visual-shell { display: grid; grid-template-columns: 320px minmax(0, 1fr); align-items: center; border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
