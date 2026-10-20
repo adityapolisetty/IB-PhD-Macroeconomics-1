@@ -61,7 +61,7 @@ if (!pages.some(page => page.slug === current)) throw new Error(`Unknown guide p
   .guide-shell.collapsed .index-title, .guide-shell.collapsed nav { display: none; }
   .guide-shell.collapsed .guide-main { max-width: none; }
   .guide-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 110px; padding: 0 40px 90px 32px; }
-  .guide-index { position: sticky; top: 28px; align-self: start; padding-top: 36px; }
+  .guide-index { position: sticky; top: 28px; align-self: start; padding-top: 36px; --accent: #111318; --accent-soft: #eceef2; }
   .index-title { font-size: .68rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
   nav { display: grid; gap: 4px; border-left: 1px solid var(--rule); }
   nav a { display: flex; align-items: baseline; gap: 12px; margin-left: -1px; padding: 10px 14px; border-left: 2px solid transparent; border-radius: 0 8px 8px 0; color: var(--ink); text-decoration: none; font-size: .88rem; font-weight: 500; line-height: 1.35; transition: background .2s, border-color .2s, color .2s, transform .2s; }

@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { ticks } from 'd3';
+  import { renderToString } from 'katex';
   import { makePhase } from '../lib/phase.js';
   import { growthParameters } from '../lib/models.js';
 
@@ -13,6 +14,8 @@
     { key: 'rho', label: 'ρ', min: .01, max: .1, step: .005 },
     { key: 'sigma', label: 'σ', min: .5, max: 5, step: .1 },
   ];
+  const texK = renderToString('k');
+  const texC = renderToString('c');
   let params = { ...growthParameters };
   let m, X, Y, path, curve, arms, ticksK, ticksC, arrows;
   $: m = makePhase(params);
@@ -25,12 +28,12 @@
   $: ticksC = ticks(0, m.limits.c, 6);
   $: arrows = field(m, X, Y);
 
-  // Unit direction of motion on a 13 x 7 grid, with a staggered flow timing per arrow.
+  // Unit direction of motion on an evenly spaced 14 x 7 grid, with a staggered flow timing per arrow.
   function field(m, X, Y) {
     const out = [];
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < 14; i++) {
       for (let j = 0; j < 7; j++) {
-        const k = m.limits.k * (.054 + i * .069), c = m.limits.c * (.094 + j * .135);
+        const k = m.limits.k * (i + .5) / 14, c = m.limits.c * (j + .5) / 7;
         const v = m.velocity(k, c);
         const dx = v.dk / m.limits.k * plot.width, dy = -v.dc / m.limits.c * plot.height;
         const length = Math.hypot(dx, dy);
@@ -109,7 +112,7 @@
     <div class="controls">
     <div class="params">{#each sliders as s}<label><span><em>{s.label}</em><strong>{Number(params[s.key]).toFixed(s.step < .01 ? 3 : 2)}</strong></span><input aria-label={`Parameter ${s.key}`} type="range" min={s.min} max={s.max} step={s.step} value={params[s.key]} on:input={event => setParam(s.key, Number(event.currentTarget.value))} /></label>{/each}</div>
     <div class="transport"><button class="play" on:click={() => { if (year >= 100) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /></label></div>
-    <div class="year"><span>TIME <strong>{Math.floor(Math.min(100, Number(year)))}</strong></span><span>k <strong>{position.k.toFixed(2)}</strong></span><span>c <strong>{position.c === null ? '-' : position.c.toFixed(2)}</strong></span></div>
+    <div class="year"><span>TIME <strong>{Math.floor(Math.min(100, Number(year)))}</strong></span><span>{@html texK} <strong>{position.k.toFixed(2)}</strong></span><span>{@html texC} <strong>{position.c === null ? '-' : position.c.toFixed(2)}</strong></span></div>
     <div class="buttons"><button class="snap" class:active={cRel === null} on:click={() => choose(k0, 0, true)}>Place on saddle path</button><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button></div>
     <label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option></select></label>
     {#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > m.limits.k || position.c > m.limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}
@@ -155,13 +158,14 @@
   .hero h1 { font-size: calc(clamp(1.2rem, 2.25vw, 2.2rem) - 2pt); margin: 0; letter-spacing: -.04em; line-height: 1.1; }
   .visual-shell { display: grid; grid-template-columns: 320px minmax(0, 1fr); align-items: center; border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
   .controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; padding: 18px 18px 18px 22px; border-right: 1px solid #e6eaf1; }
+  .controls input[type=range] { accent-color: #111318; }
   .params { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
   .params label { display: grid; gap: 2px; color: #64708a; font-size: .77rem; }
   .params label span { display: flex; align-items: baseline; gap: 6px; }
   .params em { font-style: italic; color: #3b4963; font-size: .95rem; }
-  .params strong { margin-left: auto; color: #0000cd; font-size: .85rem; font-variant-numeric: tabular-nums; }
+  .params strong { margin-left: auto; color: #111318; font-size: .85rem; font-variant-numeric: tabular-nums; }
   .year { display: flex; align-items: baseline; gap: 18px; font-size: .76rem; color: #687590; letter-spacing: .11em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .year strong { color: #0000cd; font-size: 1.15rem; letter-spacing: -.03em; min-width: 3.2ch; }
+  .year strong { color: #111318; font-size: 1.15rem; letter-spacing: -.03em; min-width: 3.2ch; }
   svg { width: 100%; height: auto; max-height: calc(100vh - 150px); min-height: 300px; display: block; touch-action: none; }
   .grid { stroke: #edf1f8; stroke-width: 1; }
   .tick { font: 14px 'Source Sans Pro', sans-serif; fill: #8790a4; }
@@ -180,10 +184,10 @@
   .buttons { display: flex; gap: 8px; }
   .hint { color: #8790a4; font-size: .72rem; font-style: italic; }
   button { transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease; }.transport button:hover { transform: translateY(-2px); }
-  .play { border: 0; background: #0000cd; color: white; width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; font-size: .95rem; padding-left: 4px; }
+  .play { border: 0; background: #111318; color: white; width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; font-size: .95rem; padding-left: 4px; }
   .timeline { flex: 1; display: flex; align-items: center; gap: 13px; color: #5d6880; font-size: .75rem; white-space: nowrap; }.timeline input { flex: 1; min-width: 0; }
   .reset { border: 1px solid #d8dfed; background: white; border-radius: 8px; padding: 7px 12px; font-size: .75rem; white-space: nowrap; }
-  .snap { border: 1px solid #c7cef1; background: #fff; color: #0000cd; border-radius: 999px; font-size: .74rem; padding: 7px 12px; white-space: nowrap; }.snap.active { background: #eeeeff; border-color: #b8bafa; }
+  .snap { border: 1px solid #c9ccd3; background: #fff; color: #111318; border-radius: 999px; font-size: .74rem; padding: 7px 12px; white-space: nowrap; }.snap.active { background: #eceef2; border-color: #9ea3ad; }
   .speed { display: flex; align-items: center; gap: 7px; font-size: .75rem; color: #5d6880; }.speed select { width: auto; border-radius: 7px; background: white; border-color: #d8dfed; color: #1d263c; font-size: .75rem; }
   .status-note { display: block; color: #9b4a4f; font-size: .72rem; line-height: 1.4; }
   @media(max-width:850px) { .visual-shell { grid-template-columns: 1fr; }.controls { border-right: 0; border-bottom: 1px solid #e6eaf1; } }
