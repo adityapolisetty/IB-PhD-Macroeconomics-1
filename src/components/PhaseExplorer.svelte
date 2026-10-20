@@ -172,13 +172,13 @@
   .frame { fill: none; stroke: #8691a7; stroke-width: 1.5; pointer-events: none; }
   .axis-label { font: 16px 'Source Sans Pro', sans-serif; fill: #4f5a70; }
   .vector { stroke: #98a5c7; stroke-width: 1.35; opacity: .74; }
-  .flow-arrow { fill: #3348dc; pointer-events: none; }
+  .flow-arrow { fill: #123078; pointer-events: none; }
   .nullcline { fill: none; stroke: #6e8699; stroke-width: 3.2; }
   .consumption-line { stroke: #7388a5; stroke-width: 2.5; stroke-dasharray: 7 6; }
-  .saddle { fill: none; stroke: #0000cd; stroke-width: 4; opacity: .9; }
+  .saddle { fill: none; stroke: #123078; stroke-width: 4; opacity: .9; }
   .trail { fill: none; stroke: #e49350; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
   .label { font: 600 16px 'Source Sans Pro', sans-serif; paint-order: stroke; stroke: #fbfcff; stroke-width: 5; }
-  .label.blue { fill: #0000cd; }.label.slate { fill: #60758b; }.label.red { fill: #d43a48; }
+  .label.blue { fill: #123078; }.label.slate { fill: #60758b; }.label.red { fill: #d43a48; }
   .interaction { cursor: crosshair; }
   .transport { display: flex; align-items: center; gap: 12px; }
   .buttons { display: flex; gap: 8px; }
