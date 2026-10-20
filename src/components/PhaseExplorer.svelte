@@ -114,8 +114,8 @@
         {#each arms as arm}<path d={arm} class="saddle" />{/each}
         {#if visible.length > 1}<path d={path(visible)} class="trail" />{/if}
         <circle cx={X(k0)} cy={Y(c0)} r="5" fill="#fff" stroke="#191b20" stroke-width="2" />
-        <circle cx={X(steady.k)} cy={Y(steady.c)} r="6" fill="#0000cd" stroke="#fff" stroke-width="2" />
         <circle cx={X(position.k)} cy={Y(position.c)} r="14" fill="#171923" opacity=".12" />
+        <circle cx={X(steady.k)} cy={Y(steady.c)} r="10" fill="#d43a48" stroke="#fff" stroke-width="2" />
         <circle cx={X(position.k)} cy={Y(position.c)} r="7.5" fill="#111318" stroke="#fff" stroke-width="2" />
       </g>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="transparent" class="interaction" on:pointerdown={event => { drag = true; event.currentTarget.setPointerCapture(event.pointerId); pointer(event); }} on:pointerup={() => drag = false} />
@@ -125,9 +125,9 @@
       <text x={X(steady.k)+9} y={plot.top+21} class="label blue">ċ = 0</text>
       <text x={X(15)} y={Y(netOutput(15))+26} class="label slate">k̇ = 0</text>
       <text x={X(3.0)} y={Y(saddleConsumption(3.0))+34} class="label blue">saddle path</text>
-      <text x={X(steady.k)+12} y={Y(steady.c)-12} class="label blue">steady state</text>
+      <text x={X(steady.k)+14} y={Y(steady.c)-14} class="label red">steady state</text>
     </svg>
-    <div class="legend"><span><i class="legend-arrow">↗</i> flowing vectors</span><span><i class="legend-line grey"></i> k̇ = 0</span><span><i class="legend-line dash"></i> ċ = 0</span><span><i class="legend-line blue"></i> saddle path</span><span><i class="legend-dot"></i> economy</span></div>
+    <div class="legend"><span><i class="legend-arrow">↗</i> flowing vectors</span><span><i class="legend-line grey"></i> k̇ = 0</span><span><i class="legend-line dash"></i> ċ = 0</span><span><i class="legend-line blue"></i> saddle path</span><span><i class="legend-dot steady"></i> steady state</span><span><i class="legend-dot"></i> economy</span></div>
   </div>
 
   <div class="transport"><button class="play" on:click={() => { if (year >= (result.exitTime ?? 100)) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /><span>100 years</span></label><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button><label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={4}>4 yr/s</option><option value={8}>8 yr/s</option><option value={16}>16 yr/s</option></select></label></div>
@@ -160,11 +160,11 @@
   .saddle { fill: none; stroke: #0000cd; stroke-width: 4; opacity: .9; }
   .trail { fill: none; stroke: #e49350; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
   .label { font: 600 16px 'Source Sans Pro', sans-serif; paint-order: stroke; stroke: #fbfcff; stroke-width: 5; }
-  .label.blue { fill: #0000cd; }.label.slate { fill: #60758b; }
+  .label.blue { fill: #0000cd; }.label.slate { fill: #60758b; }.label.red { fill: #d43a48; }
   .interaction { cursor: crosshair; }
   .legend { display: flex; flex-wrap: wrap; gap: 16px 26px; padding: 4px 28px 20px; font-size: .73rem; color: #64708a; }
   .legend span { display: inline-flex; gap: 9px; align-items: center; }.legend-arrow { font-size: 1.3rem; color: #8793bd; font-style: normal; line-height: 0; }
-  .legend-line { display: inline-block; width: 22px; border-top: 3px solid; }.legend-line.grey { color: #6e8699; }.legend-line.dash { color: #7388a5; border-style: dashed; }.legend-line.blue { color: #0000cd; }.legend-dot { width: 11px; height: 11px; border-radius: 50%; background: #111318; }
+  .legend-line { display: inline-block; width: 22px; border-top: 3px solid; }.legend-line.grey { color: #6e8699; }.legend-line.dash { color: #7388a5; border-style: dashed; }.legend-line.blue { color: #0000cd; }.legend-dot { width: 11px; height: 11px; border-radius: 50%; background: #111318; }.legend-dot.steady { background: #d43a48; }
   .transport { display: flex; align-items: center; gap: 19px; padding: 21px 3px; border-bottom: 1px solid #e6eaf1; }
   button { transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease; }.transport button:hover,.snap:hover { transform: translateY(-2px); }
   .play { border: 0; background: #0000cd; color: white; width: 48px; height: 48px; flex: 0 0 auto; border-radius: 50%; font-size: 1rem; padding-left: 4px; }
