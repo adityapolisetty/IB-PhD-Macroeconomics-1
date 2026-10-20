@@ -46,14 +46,15 @@
     }
     return out;
   }
-  // Small filled arrowhead pointing along the flow, drawn around the origin.
-  const head = a => `M${(5 * a.ux).toFixed(2)},${(5 * a.uy).toFixed(2)} L${(-4 * a.ux - 3.5 * a.uy).toFixed(2)},${(-4 * a.uy + 3.5 * a.ux).toFixed(2)} L${(-4 * a.ux + 3.5 * a.uy).toFixed(2)},${(-4 * a.uy - 3.5 * a.ux).toFixed(2)} Z`;
+  // Small arrow (shaft and open head) pointing along the flow, drawn around the origin.
+  const pt = (a, along, across) => `${(along * a.ux - across * a.uy).toFixed(2)},${(along * a.uy + across * a.ux).toFixed(2)}`;
+  const head = a => `M${pt(a, -6, 0)} L${pt(a, 6, 0)} M${pt(a, 2, 3.5)} L${pt(a, 6, 0)} L${pt(a, 2, -3.5)}`;
 
   // The start is stored relative to the steady state so it survives parameter changes.
   let kRel = .5, cRel = null;
   let year = 0;
   let playing = false;
-  let speed = 0.5;
+  let speed = 4;
   let drag = false;
   let chart;
   let lastFrame = 0;
@@ -114,7 +115,7 @@
     <div class="transport"><button class="play" on:click={() => { if (year >= 100) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /></label></div>
     <div class="year"><span>TIME <strong>{Math.floor(Math.min(100, Number(year)))}</strong></span><span>{@html texK} <strong>{position.k.toFixed(2)}</strong></span><span>{@html texC} <strong>{position.c === null ? '-' : position.c.toFixed(2)}</strong></span></div>
     <div class="buttons"><button class="snap" class:active={cRel === null} on:click={() => choose(k0, 0, true)}>Place on saddle path</button><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button></div>
-    <label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option></select></label>
+    <label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option><option value={8}>8 yr/s</option></select></label>
     {#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > m.limits.k || position.c > m.limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}
     <span class="hint">Click or drag on the plot to set the start</span>
     </div>
@@ -137,7 +138,7 @@
         {#if visible.length > 1}<path d={path(visible)} class="trail" />{/if}
         <circle cx={X(k0)} cy={Y(c0)} r="5" fill="#fff" stroke="#191b20" stroke-width="2" />
         <circle cx={plotK(position.k)} cy={plotC(markerC)} r="14" fill="#171923" opacity=".12" />
-        <circle cx={X(m.steady.k)} cy={Y(m.steady.c)} r="10" fill="#d43a48" stroke="#fff" stroke-width="2" />
+        <circle cx={X(m.steady.k)} cy={Y(m.steady.c)} r="5" fill="#bf3441" stroke="#fff" stroke-width="1.5" />
         <circle cx={plotK(position.k)} cy={plotC(markerC)} r="7.5" fill="#111318" stroke="#fff" stroke-width="2" />
       </g>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="transparent" class="interaction" on:pointerdown={event => { drag = true; event.currentTarget.setPointerCapture(event.pointerId); pointer(event); }} on:pointerup={() => drag = false} />
@@ -159,26 +160,26 @@
   .visual-shell { display: grid; grid-template-columns: 320px minmax(0, 1fr); align-items: center; border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
   .controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; padding: 18px 18px 18px 22px; border-right: 1px solid #e6eaf1; }
   .controls input[type=range] { accent-color: #111318; }
-  .params { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+  .params { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .params label { display: grid; gap: 2px; color: #64708a; font-size: .77rem; }
   .params label span { display: flex; align-items: baseline; gap: 6px; }
   .params em { font-style: italic; color: #3b4963; font-size: .95rem; }
   .params strong { margin-left: auto; color: #111318; font-size: .85rem; font-variant-numeric: tabular-nums; }
-  .year { display: flex; align-items: baseline; gap: 18px; font-size: .76rem; color: #687590; letter-spacing: .11em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .year { display: grid; gap: 4px; font-size: .76rem; color: #687590; letter-spacing: .11em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .year strong { color: #111318; font-size: 1.15rem; letter-spacing: -.03em; min-width: 3.2ch; }
-  svg { width: 100%; height: auto; max-height: calc(100vh - 150px); min-height: 300px; display: block; touch-action: none; }
+  svg { width: 100%; height: auto; max-height: calc(100vh - 185px); min-height: 300px; display: block; touch-action: none; }
   .grid { stroke: #edf1f8; stroke-width: 1; }
   .tick { font: 14px 'Source Sans Pro', sans-serif; fill: #8790a4; }
   .frame { fill: none; stroke: #8691a7; stroke-width: 1.5; pointer-events: none; }
   .axis-label { font: 16px 'Source Sans Pro', sans-serif; fill: #4f5a70; }
   .vector { stroke: #98a5c7; stroke-width: 1.35; opacity: .74; }
-  .flow-arrow { fill: #123078; pointer-events: none; }
+  .flow-arrow { fill: none; stroke: #184199; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
   .nullcline { fill: none; stroke: #6e8699; stroke-width: 3.2; }
   .consumption-line { stroke: #7388a5; stroke-width: 2.5; stroke-dasharray: 7 6; }
-  .saddle { fill: none; stroke: #123078; stroke-width: 4; opacity: .9; }
+  .saddle { fill: none; stroke: #184199; stroke-width: 4; opacity: .9; }
   .trail { fill: none; stroke: #e49350; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
   .label { font: 600 16px 'Source Sans Pro', sans-serif; paint-order: stroke; stroke: #fbfcff; stroke-width: 5; }
-  .label.blue { fill: #123078; }.label.slate { fill: #60758b; }.label.red { fill: #d43a48; }
+  .label.blue { fill: #184199; }.label.slate { fill: #60758b; }.label.red { fill: #bf3441; }
   .interaction { cursor: crosshair; }
   .transport { display: flex; align-items: center; gap: 12px; }
   .buttons { display: flex; gap: 8px; }
