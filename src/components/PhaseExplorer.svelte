@@ -19,7 +19,11 @@
       const dx = v.dk / limits.k * plot.width;
       const dy = -v.dc / limits.c * plot.height;
       const length = Math.hypot(dx, dy);
-      if (length > .001) arrows.push({ x: X(k), y: Y(c), dx: 13 * dx / length, dy: 13 * dy / length });
+      if (length > .001) arrows.push({
+        x: X(k), y: Y(c), dx: 13 * dx / length, dy: 13 * dy / length,
+        duration: Math.max(1.1, Math.min(3.2, 42 / (length + 5))),
+        delay: -((Math.round(k * 19 + c * 31) % 13) / 13) * 2.7,
+      });
     }
   }
   const presets = [
@@ -33,6 +37,7 @@
   let onSaddle = true;
   let year = 0;
   let playing = false;
+  let flowing = true;
   let speed = 8;
   let drag = false;
   let chart;
@@ -59,6 +64,10 @@
     c0 = stable ? saddleConsumption(k0) : Math.max(.05, Math.min(limits.c - .05, c));
     onSaddle = stable;
   }
+  function toggleFlow() {
+    flowing = !flowing;
+    if (chart) flowing ? chart.unpauseAnimations() : chart.pauseAnimations();
+  }
   function pointer(event) {
     if (!drag || !chart) return;
     const p = chart.createSVGPoint(); p.x = event.clientX; p.y = event.clientY;
@@ -76,7 +85,14 @@
     animationId = requestAnimationFrame(frame);
   }
   let animationId;
-  onMount(() => { animationId = requestAnimationFrame(frame); return () => cancelAnimationFrame(animationId); });
+  onMount(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      flowing = false;
+      chart?.pauseAnimations();
+    }
+    animationId = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(animationId);
+  });
   $: outcomeText = onSaddle ? 'On the saddle path: both variables approach the unique steady state.'
     : result.outcome === 'exhaustion' ? `This path heads toward capital exhaustion and leaves the visible frame after ${result.exitTime.toFixed(1)} years. It is infeasible.`
     : result.outcome === 'overaccumulation' ? `This path heads toward overaccumulation and leaves the visible frame after ${result.exitTime.toFixed(1)} years. It fails the transversality condition.`
@@ -90,14 +106,21 @@
   </div>
 
   <div class="visual-shell">
-    <div class="visual-heading"><span class="tag">THE PHASE PLANE</span><span class="year">YEAR <strong>{Math.min(100, Number(year)).toFixed(1)}</strong> <span>/ 100</span></span></div>
+    <div class="visual-heading"><span class="tag">THE PHASE PLANE</span><div class="field-status"><button class="flow-toggle" aria-pressed={flowing} on:click={toggleFlow}><span class:still={!flowing} class="pulse"></span>{flowing ? 'Pause flow' : 'Resume flow'}</button><span class="year">YEAR <strong>{Math.min(100, Number(year)).toFixed(1)}</strong> <span>/ 100</span></span></div></div>
     <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Interactive phase diagram with capital on the horizontal axis, consumption on the vertical axis, vector field, nullclines, saddle path and moving economy marker" on:pointermove={pointer} on:pointerup={() => drag = false} on:pointercancel={() => drag = false}>
       <defs><clipPath id="phase-clip"><rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} /></clipPath><marker id="phase-arrow" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5" fill="none" stroke="#8793bd" stroke-width="1.3" /></marker></defs>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="#fbfcff" />
       {#each ticksK as tick}<line x1={X(tick)} x2={X(tick)} y1={plot.top} y2={plot.top + plot.height} class="grid" /><text x={X(tick)} y={plot.top + plot.height + 25} class="tick" text-anchor="middle">{tick}</text>{/each}
       {#each ticksC as tick}<line x1={plot.left} x2={plot.left + plot.width} y1={Y(tick)} y2={Y(tick)} class="grid" /><text x={plot.left - 15} y={Y(tick) + 4} class="tick" text-anchor="end">{tick.toFixed(1)}</text>{/each}
       <g clip-path="url(#phase-clip)">
-        {#each arrows as a}<line x1={a.x-a.dx/2} y1={a.y-a.dy/2} x2={a.x+a.dx/2} y2={a.y+a.dy/2} class="vector" marker-end="url(#phase-arrow)" />{/each}
+        {#each arrows as a}
+          <line x1={a.x-a.dx/2} y1={a.y-a.dy/2} x2={a.x+a.dx/2} y2={a.y+a.dy/2} class="vector" marker-end="url(#phase-arrow)" />
+          <circle class="flow-particle" cx={a.x-a.dx/2} cy={a.y-a.dy/2} r="2.4" opacity="0">
+            <animate attributeName="cx" from={a.x-a.dx/2} to={a.x+a.dx/2} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
+            <animate attributeName="cy" from={a.y-a.dy/2} to={a.y+a.dy/2} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;.95;.95;0" keyTimes="0;.18;.78;1" dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
+          </circle>
+        {/each}
         <path d={path(curve)} class="nullcline" />
         <line x1={X(steady.k)} x2={X(steady.k)} y1={plot.top} y2={plot.top+plot.height} class="consumption-line" />
         {#each arms as arm}<path d={arm} class="saddle" />{/each}
@@ -116,7 +139,7 @@
       <text x={X(3.0)} y={Y(saddleConsumption(3.0))+34} class="label blue">saddle path</text>
       <text x={X(steady.k)+12} y={Y(steady.c)-12} class="label blue">steady state</text>
     </svg>
-    <div class="legend"><span><i class="legend-arrow">↗</i> instantaneous motion</span><span><i class="legend-line grey"></i> k̇ = 0</span><span><i class="legend-line dash"></i> ċ = 0</span><span><i class="legend-line blue"></i> saddle path</span><span><i class="legend-dot"></i> economy</span></div>
+    <div class="legend"><span><i class="legend-arrow">↗</i> flowing vectors</span><span><i class="legend-line grey"></i> k̇ = 0</span><span><i class="legend-line dash"></i> ċ = 0</span><span><i class="legend-line blue"></i> saddle path</span><span><i class="legend-dot"></i> economy</span></div>
   </div>
 
   <div class="transport"><button class="play" on:click={() => { if (year >= (result.exitTime ?? 100)) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /><span>100 years</span></label><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button><label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={4}>4 yr/s</option><option value={8}>8 yr/s</option><option value={16}>16 yr/s</option></select></label></div>
@@ -133,7 +156,12 @@
   .hero h1 { font-size: clamp(2.4rem, 4.5vw, 4.4rem); margin: 8px 0 0; letter-spacing: -.055em; line-height: 1.03; }
   .hero p:last-child { max-width: 470px; margin: 0 0 4px; color: #5a6477; font-size: 1rem; }
   .visual-shell { border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
-  .visual-heading { display: flex; justify-content: space-between; align-items: center; padding: 18px 26px 0; }
+  .visual-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 18px 26px 0; }
+  .field-status { display: flex; align-items: center; gap: 19px; margin-left: auto; }
+  .flow-toggle { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #dce3f0; border-radius: 999px; background: #f7f8ff; color: #42517b; padding: 5px 10px; font-size: .69rem; line-height: 1; white-space: nowrap; }
+  .flow-toggle:hover { background: #eeefff; border-color: #bfc6f6; }
+  .pulse { width: 7px; height: 7px; border-radius: 50%; background: #0000cd; box-shadow: 0 0 0 3px #e4e5ff; }
+  .pulse.still { background: #8b94a5; box-shadow: none; }
   .tag,.panel-label { color: #66718a; font-size: .64rem; font-weight: 700; letter-spacing: .14em; }
   .year { font-size: .76rem; color: #687590; letter-spacing: .11em; font-variant-numeric: tabular-nums; }
   .year strong { color: #0000cd; font-size: 1.28rem; letter-spacing: -.03em; }
@@ -143,6 +171,7 @@
   .axis { stroke: #8691a7; stroke-width: 1.5; }
   .axis-label { font: 16px 'Source Sans Pro', sans-serif; fill: #4f5a70; }
   .vector { stroke: #98a5c7; stroke-width: 1.35; opacity: .74; }
+  .flow-particle { fill: #3348dc; pointer-events: none; }
   .nullcline { fill: none; stroke: #6e8699; stroke-width: 3.2; }
   .consumption-line { stroke: #7388a5; stroke-width: 2.5; stroke-dasharray: 7 6; }
   .saddle { fill: none; stroke: #0000cd; stroke-width: 4; opacity: .9; }
@@ -165,6 +194,6 @@
   .reading { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }.reading h2 { font-size: 1.5rem; margin-bottom: 10px; }.reading p { color: #566177; font-size: .89rem; line-height: 1.65; }.footnote { border-top: 1px solid #e6eaf1; margin-top: 22px; padding-top: 17px; color: #7a8496; font-size: .73rem; line-height: 1.6; }
   .film { margin-top: 25px; border: 1px solid #dce3f0; border-radius: 10px; padding: 14px 18px; }.film summary { font-size: .82rem; font-weight: 600; color: #0000cd; cursor: pointer; }.film summary span { float: right; }.film video { display: block; width: 100%; max-width: 920px; margin: 18px auto 0; border-radius: 8px; border: 1px solid #e4e8f2; }.film p { margin: 10px 0 0; color: #64708a; font-size: .75rem; }
   @media(max-width:850px) { .hero,.controls-panel,.explanation,.reading { grid-template-columns: 1fr; gap: 15px; }.hero { margin-bottom: 23px; }.phase-page { padding-top: 27px; }.math { white-space: normal; } }
-  @media(max-width:550px) { .transport { flex-wrap: wrap; }.timeline { order: 3; flex-basis: 100%; }.speed { margin-left: auto; }.legend { gap: 8px 14px; padding: 4px 14px 14px; }.visual-heading { padding: 10px 14px 0; }.label { font-size: 14px; } }
+  @media(max-width:550px) { .transport { flex-wrap: wrap; }.timeline { order: 3; flex-basis: 100%; }.speed { margin-left: auto; }.legend { gap: 8px 14px; padding: 4px 14px 14px; }.visual-heading { padding: 10px 14px 0; }.field-status { gap: 8px; }.flow-toggle { font-size: .62rem; padding: 4px 7px; }.label { font-size: 14px; } }
   @media(prefers-reduced-motion:reduce) { button { transition: none; } }
 </style>
