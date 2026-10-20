@@ -16,6 +16,10 @@
   ];
   const texK = renderToString('k');
   const texC = renderToString('c');
+  const texF = renderToString('f(k)');
+  const texFp = renderToString("f'(k)");
+  const texGap = renderToString(String.raw`f'(k) - \delta - \rho`);
+  const fmt = x => Number.isFinite(x) ? x.toFixed(3) : '-';
   let params = { ...growthParameters };
   let m, X, Y, path, curve, arms, ticksK, ticksC, arrows;
   $: m = makePhase(params);
@@ -64,6 +68,8 @@
   $: result = m.simulate(k0, c0, cRel === null);
   $: position = atYear(result.trajectory, Number(year));
   $: visible = result.trajectory.filter(p => p.t <= Number(year) && p.c !== null);
+  // Marginal product of capital at the current point.
+  $: mpk = params.alpha * params.A * position.k ** (params.alpha - 1);
   $: markerC = position.c === null ? result.exhaustionC : position.c;
   $: plotK = k => Math.max(plot.left + 9, Math.min(plot.left + plot.width - 9, X(k)));
   $: plotC = c => Math.max(plot.top + 9, Math.min(plot.top + plot.height - 9, Y(c)));
@@ -113,7 +119,7 @@
     <div class="controls">
     <div class="params">{#each sliders as s}<label><span><em>{s.label}</em><strong>{Number(params[s.key]).toFixed(s.step < .01 ? 3 : 2)}</strong></span><input aria-label={`Parameter ${s.key}`} type="range" min={s.min} max={s.max} step={s.step} value={params[s.key]} on:input={event => setParam(s.key, Number(event.currentTarget.value))} /></label>{/each}</div>
     <div class="transport"><button class="play" on:click={() => { if (year >= 100) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{playing ? 'Ⅱ' : '▶'}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /></label></div>
-    <div class="year"><span>TIME <strong>{Math.floor(Math.min(100, Number(year)))}</strong></span><span>{@html texK} <strong>{position.k.toFixed(2)}</strong></span><span>{@html texC} <strong>{position.c === null ? '-' : position.c.toFixed(2)}</strong></span></div>
+    <div class="year"><span>TIME <strong>{Math.floor(Math.min(100, Number(year)))}</strong></span><span class="row"><span>{@html texK} <strong>{position.k.toFixed(2)}</strong></span><span>{@html texF} <strong>{fmt(params.A * position.k ** params.alpha)}</strong></span><span>{@html texFp} <strong>{fmt(mpk)}</strong></span></span><span class="row"><span>{@html texC} <strong>{position.c === null ? '-' : position.c.toFixed(2)}</strong></span><span>{@html texGap} <strong>{fmt(mpk - params.delta - params.rho)}</strong></span></span></div>
     <div class="buttons"><button class="snap" class:active={cRel === null} on:click={() => choose(k0, 0, true)}>Place on saddle path</button><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button></div>
     <label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option><option value={8}>8 yr/s</option></select></label>
     {#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > m.limits.k || position.c > m.limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}
@@ -166,7 +172,8 @@
   .params em { font-style: italic; color: #111318; font-size: .95rem; }
   .params strong { margin-left: auto; color: #111318; font-size: .85rem; font-variant-numeric: tabular-nums; }
   .year { display: grid; gap: 4px; font-size: .76rem; color: #111318; letter-spacing: .11em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .year strong { color: #111318; font-size: 1.15rem; letter-spacing: -.03em; min-width: 3.2ch; }
+  .year strong { color: #111318; font-size: 1.05rem; letter-spacing: -.03em; }
+  .year .row { display: flex; align-items: baseline; gap: 14px; letter-spacing: 0; }
   svg { width: 100%; height: auto; max-height: calc(100vh - 185px); min-height: 300px; display: block; touch-action: none; }
   .grid { stroke: #edf1f8; stroke-width: 1; }
   .tick { font: 14px 'Source Sans Pro', sans-serif; fill: #111318; }
