@@ -150,7 +150,6 @@
 </script>
 
 <section class="phase-page">
-  <div class="hero"><h1>Phase diagram</h1></div>
 
   <div class="visual-shell">
     <div class="controls">
