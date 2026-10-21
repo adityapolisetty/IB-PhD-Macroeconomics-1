@@ -97,8 +97,8 @@
   // Marginal product of capital at the current point.
   $: mpk = params.alpha * params.A * position.k ** (params.alpha - 1);
   $: markerC = position.c === null ? result.exhaustionC : position.c;
-  $: plotK = k => Math.max(plot.left + 9, Math.min(plot.left + plot.width - 9, X(k)));
-  $: plotC = c => Math.max(plot.top + 9, Math.min(plot.top + plot.height - 9, Y(c)));
+  $: plotK = k => Math.max(plot.left, Math.min(plot.left + plot.width, X(k)));
+  $: plotC = c => Math.max(plot.top, Math.min(plot.top + plot.height, Y(c)));
 
   function atYear(points, t) {
     if (t >= points[points.length - 1].t) return points[points.length - 1];
@@ -109,8 +109,9 @@
   }
   function choose(k, c, stable = false) {
     playing = false; year = 0;
-    kRel = Math.max(.02 * m.limits.k, Math.min(.98 * m.limits.k, k)) / m.steady.k;
-    cRel = stable ? null : Math.max(.02 * m.limits.c, Math.min(.98 * m.limits.c, c)) / m.steady.c;
+    // k stays just above 0, where the marginal product is infinite; c may sit exactly on the axis.
+    kRel = Math.max(1e-4 * m.limits.k, Math.min(m.limits.k, k)) / m.steady.k;
+    cRel = stable ? null : Math.max(0, Math.min(m.limits.c, c)) / m.steady.c;
   }
   function setParam(key, value) {
     playing = false; year = 0;
