@@ -81,7 +81,7 @@
   const head = a => `M${pt(a, -4.2, 0)} L${pt(a, 4.2, 0)} M${pt(a, 1.4, 2.45)} L${pt(a, 4.2, 0)} L${pt(a, 1.4, -2.45)}`;
 
   // The start is stored relative to the steady state so it survives parameter changes.
-  let kRel = .5, cRel = null;
+  let kRel = .3, cRel = null;
   let year = 0;
   let playing = false;
   let speed = 4;
