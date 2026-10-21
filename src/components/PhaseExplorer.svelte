@@ -31,6 +31,28 @@
   $: Y = c => plot.top + plot.height - c / m.limits.c * plot.height;
   $: path = points => points.map((p, i) => `${i ? 'L' : 'M'}${X(p.k).toFixed(2)},${Y(p.c).toFixed(2)}`).join(' ');
   $: curve = Array.from({ length: 321 }, (_, i) => ({ k: m.limits.k * i / 320, c: m.netOutput(m.limits.k * i / 320) }));
+  $: quads = quadrants(m, curve);
+
+  // The two nullclines split the plane into four regions; dx, dy give the direction of k and c in each.
+  let showQuads = false;
+  function quadrants(m, curve) {
+    const ks = m.steady.k, kMax = m.limits.k, cMax = m.limits.c;
+    const clamp = p => ({ k: p.k, c: Math.min(Math.max(p.c, 0), cMax) });
+    const mid = { k: ks, c: m.netOutput(ks) };
+    const left = [...curve.filter(p => p.k < ks), mid].map(clamp), right = [mid, ...curve.filter(p => p.k > ks)].map(clamp);
+    const anchor = (k, above) => { const c = clamp({ k, c: m.netOutput(k) }).c; return { k, c: above ? (c + cMax) / 2 : c / 2 }; };
+    return [
+      { color: '#3f74d1', dx: -1, dy: 1, poly: [{ k: 0, c: cMax }, { k: ks, c: cMax }, ...[...left].reverse()], at: anchor(.5 * ks, true) },
+      { color: '#173f8f', dx: 1, dy: 1, poly: [...left, { k: ks, c: 0 }, { k: 0, c: 0 }], at: anchor(.5 * ks, false) },
+      { color: '#d9545e', dx: -1, dy: -1, poly: [...right, { k: kMax, c: cMax }, { k: ks, c: cMax }], at: anchor((ks + kMax) / 2, true) },
+      { color: '#9a1f2a', dx: 1, dy: -1, poly: [...right, { k: kMax, c: 0 }, { k: ks, c: 0 }], at: anchor((ks + kMax) / 2, false) },
+    ];
+  }
+  // A joined pair of arrows from one corner: one horizontal (k), one vertical (c).
+  function cross(q) {
+    const L = 24, x = X(q.at.k) - q.dx * L / 2, y = Y(q.at.c) + q.dy * L / 2, ex = x + q.dx * L, ey = y - q.dy * L;
+    return `M${ex},${y} L${x},${y} L${x},${ey} M${ex - q.dx * 7},${y - 5} L${ex},${y} L${ex - q.dx * 7},${y + 5} M${x - 5},${ey + q.dy * 7} L${x},${ey} L${x + 5},${ey + q.dy * 7}`;
+  }
   $: arms = [m.saddleArms.left, m.saddleArms.right].map(points => path([...points].reverse()));
   $: ticksK = ticks(0, m.limits.k, 6);
   $: ticksC = ticks(0, m.limits.c, 6);
@@ -132,6 +154,7 @@
     <div class="year"><span>TIME <strong>{Math.floor(Math.min(100, Number(year)))}</strong></span><span class="row"><span><em>Capital</em> {@html texK} <strong>{position.k.toFixed(2)}</strong></span><span><em>Consumption</em> {@html texC} <strong>{position.c === null ? '-' : position.c.toFixed(2)}</strong></span></span><span><em>Output</em> {@html texF} <strong>{fmt(params.A * position.k ** params.alpha)}</strong></span><span>{@html texUse} <strong>{position.c === null ? '-' : fmt(params.delta * position.k + position.c)}</strong></span><span>{@html texFp} <strong>{fmt(mpk)}</strong></span><span>{@html texGap} <strong>{fmt(params.delta + params.rho)}</strong></span></div>
     <div class="buttons"><button class="snap" class:active={cRel === null} on:click={() => choose(k0, 0, true)}>Place on saddle path</button><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button></div>
     <label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option><option value={8}>8 yr/s</option></select></label>
+    <label class="speed"><input type="checkbox" bind:checked={showQuads} /> Highlight quadrants</label>
     {#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > m.limits.k || position.c > m.limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}
     <span class="hint">Click or drag on the plot to set the start</span>
     </div>
@@ -141,6 +164,7 @@
       {#each ticksK as tick}<line x1={X(tick)} x2={X(tick)} y1={plot.top} y2={plot.top + plot.height} class="grid" /><text x={X(tick)} y={plot.top + plot.height + 22} class="tick" text-anchor="middle">{tick}</text>{/each}
       {#each ticksC as tick}<line x1={plot.left} x2={plot.left + plot.width} y1={Y(tick)} y2={Y(tick)} class="grid" /><text x={plot.left - 12} y={Y(tick) + 4} class="tick" text-anchor="end">{tick.toFixed(1)}</text>{/each}
       <g clip-path="url(#phase-clip)">
+        {#if showQuads}{#each quads as q}<path d={path(q.poly) + ' Z'} fill={q.color} fill-opacity=".12" />{/each}{/if}
         {#each arrows as a}
           <line x1={a.x-4.55*a.ux} y1={a.y-4.55*a.uy} x2={a.x+4.55*a.ux} y2={a.y+4.55*a.uy} class="vector" marker-end="url(#phase-arrow)" />
           <path class="flow-arrow" d={head(a)} opacity="0">
@@ -151,6 +175,7 @@
         <path d={path(curve)} class="nullcline" />
         <line x1={X(m.steady.k)} x2={X(m.steady.k)} y1={plot.top} y2={plot.top+plot.height} class="consumption-line" />
         {#each arms as arm}<path d={arm} class="saddle" />{/each}
+        {#if showQuads}{#each quads as q}<path d={cross(q)} fill="none" stroke={q.color} stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />{/each}{/if}
         {#if visible.length > 1}<path d={path(visible)} class="trail" />{/if}
         <circle cx={X(k0)} cy={Y(c0)} r="5" fill="#fff" stroke="#191b20" stroke-width="2" />
         <circle cx={plotK(position.k)} cy={plotC(markerC)} r="14" fill="#171923" opacity=".12" />
