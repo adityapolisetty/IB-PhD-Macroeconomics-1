@@ -54,7 +54,9 @@
     return `M${ex},${y} L${x},${y} L${x},${ey} M${ex - q.dx * 7},${y - 5} L${ex},${y} L${ex - q.dx * 7},${y + 5} M${x - 5},${ey + q.dy * 7} L${x},${ey} L${x + 5},${ey + q.dy * 7}`;
   }
   $: arms = [m.saddleArms.left, m.saddleArms.right].map(points => path([...points].reverse()));
-  $: ticksK = ticks(0, m.limits.k, 6);
+  // Twice the usual tick density on the capital axis: halve the standard step.
+  $: stepK = (ticks(0, m.limits.k, 6)[1] - ticks(0, m.limits.k, 6)[0]) / 2;
+  $: ticksK = Array.from({ length: Math.floor(m.limits.k / stepK + 1e-9) + 1 }, (_, i) => +(i * stepK).toFixed(6));
   $: ticksC = ticks(0, m.limits.c, 6);
   $: arrows = field(m, X, Y);
 
@@ -149,7 +151,8 @@
 
   <div class="visual-shell">
     <div class="controls">
-    <div class="fixed">{#each fixed as p}<span>{@html p.tex} <strong>{Number(params[p.key]).toFixed(p.digits)}</strong></span>{/each}</div>
+    <h2 class="panel-head">Parameters</h2>
+    <div class="fixed">{#each fixed as p}<span>{@html p.tex} = <strong>{Number(params[p.key]).toFixed(p.digits)}</strong></span>{/each}</div>
     <div class="params">{#each sliders as s}<label><span><em>{s.label}</em><strong>{Number(params[s.key]).toFixed(s.step < .01 ? 3 : 2)}</strong></span><input aria-label={`Parameter ${s.key}`} type="range" min={s.min} max={s.max} step={s.step} value={params[s.key]} on:input={event => setParam(s.key, Number(event.currentTarget.value))} /></label>{/each}</div>
     <div class="transport"><button class="play" on:click={() => { if (year >= 100) year = 0; playing = !playing; }} aria-label={playing ? 'Pause animation' : 'Play animation'}>{#if playing}<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1" /><rect x="9.5" y="2.5" width="3" height="11" rx="1" /></svg>{:else}<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.8 L13 8 L5 13.2 Z" /></svg>{/if}</button><label class="timeline"><span>Time</span><input aria-label="Year" type="range" min="0" max="100" step="0.1" bind:value={year} on:input={() => playing = false} /></label></div>
     <div class="year"><span>TIME <strong>{Math.floor(Math.min(100, Number(year)))}</strong></span><span class="row"><span><em>Capital</em> {@html texK} <strong>{position.k.toFixed(2)}</strong></span><span><em>Consumption</em> {@html texC} <strong>{position.c === null ? '-' : position.c.toFixed(2)}</strong></span></span><span><em>Output</em> {@html texF} <strong>{fmt(params.A * position.k ** params.alpha)}</strong></span><span>{@html texUse} <strong>{position.c === null ? '-' : fmt(params.delta * position.k + position.c)}</strong></span><span>{@html texFp} <strong>{fmt(mpk)}</strong></span><span>{@html texGap} <strong>{fmt(params.delta + params.rho)}</strong></span></div>
@@ -209,7 +212,8 @@
   .visual-shell { display: grid; grid-template-columns: 320px minmax(0, 1fr); align-items: center; border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
   .controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; padding: 18px 18px 18px 22px; border-right: 1px solid #e6eaf1; }
   .controls input[type=range] { accent-color: #111318; }
-  .params { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .params { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #e3e6ec; }
+  .panel-head { margin: 0 0 -6px; font-size: 1.05rem; font-weight: 700; color: #111318; letter-spacing: 0; }
   .params label { display: grid; gap: 2px; color: #111318; font-size: .77rem; }
   .params label span { display: flex; align-items: baseline; gap: 6px; }
   .params em { font-style: italic; color: #111318; font-size: .95rem; }
