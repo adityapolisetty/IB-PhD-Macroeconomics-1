@@ -222,7 +222,7 @@
   .year { display: grid; gap: 4px; font-size: .76rem; color: #111318; letter-spacing: .11em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .year .row { display: flex; gap: 18px; }
   .year .divided { margin-top: 4px; padding-top: 8px; border-top: 1px solid #e3e6ec; }
-  .year .note { font-size: .8rem; color: #8f1d27; }
+  .year .note { font-size: .8rem; color: #8f1d27; padding-bottom: 10px; border-bottom: 1px solid #e3e6ec; }
   .year em { font-style: normal; letter-spacing: 0; font-size: .8rem; margin-right: 2px; }
   .year strong { color: #111318; font-size: 1.05rem; letter-spacing: -.03em; }
   .fixed { display: flex; gap: 22px; align-items: baseline; font-size: .85rem; }.fixed strong { font-weight: 600; margin-left: 2px; }
