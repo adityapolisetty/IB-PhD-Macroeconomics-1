@@ -34,7 +34,7 @@
   $: quads = quadrants(m, curve);
 
   // The two nullclines split the plane into four regions; dx, dy give the direction of k and c in each.
-  let showQuads = false;
+  let showQuads = false, showVectors = true;
   function quadrants(m, curve) {
     const ks = m.steady.k, kMax = m.limits.k, cMax = m.limits.c;
     const clamp = p => ({ k: p.k, c: Math.min(Math.max(p.c, 0), cMax) });
@@ -156,6 +156,7 @@
     <div class="buttons"><button class="snap" class:active={cRel === null} on:click={() => choose(k0, 0, true)}>Place on saddle path</button><button class="reset" on:click={() => { year = 0; playing = false; }}>Reset time</button></div>
     <label class="speed">Speed <select bind:value={speed} aria-label="Playback speed"><option value={0.5}>0.5 yr/s</option><option value={1}>1 yr/s</option><option value={2}>2 yr/s</option><option value={4}>4 yr/s</option><option value={8}>8 yr/s</option></select></label>
     <label class="speed"><input type="checkbox" bind:checked={showQuads} /> Highlight quadrants</label>
+    <label class="speed"><input type="checkbox" bind:checked={showVectors} /> Show vectors</label>
     {#if result.depletionTime !== null && Number(year) >= result.depletionTime}<span class="status-note">Capital exhausted at year {result.depletionTime.toFixed(1)} · consumption is no longer defined</span>{:else if position.k > m.limits.k || position.c > m.limits.c}<span class="status-note">Economy is beyond the visible chart</span>{/if}
     <span class="hint">Click or drag on the plot to set the start</span>
     </div>
@@ -166,13 +167,13 @@
       {#each ticksC as tick}<line x1={plot.left} x2={plot.left + plot.width} y1={Y(tick)} y2={Y(tick)} class="grid" /><text x={plot.left - 12} y={Y(tick) + 4} class="tick" text-anchor="end">{tick.toFixed(1)}</text>{/each}
       <g clip-path="url(#phase-clip)">
         {#if showQuads}{#each quads as q}<path d={path(q.poly) + ' Z'} fill={q.color} fill-opacity=".16" />{/each}{/if}
-        {#each arrows as a}
+        {#if showVectors}{#each arrows as a}
           <line x1={a.x-4.55*a.ux} y1={a.y-4.55*a.uy} x2={a.x+4.55*a.ux} y2={a.y+4.55*a.uy} class="vector" marker-end="url(#phase-arrow)" />
           <path class="flow-arrow" d={head(a)} opacity="0">
             <animateTransform attributeName="transform" type="translate" from={`${a.x-5.0*a.ux} ${a.y-5.0*a.uy}`} to={`${a.x+5.0*a.ux} ${a.y+5.0*a.uy}`} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
             <animate attributeName="opacity" values="0;.45;.45;0" keyTimes="0;.18;.78;1" dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
           </path>
-        {/each}
+        {/each}{/if}
         <path d={path(curve)} class="nullcline" />
         <line x1={X(m.steady.k)} x2={X(m.steady.k)} y1={plot.top} y2={plot.top+plot.height} class="consumption-line" />
         {#each arms as arm}<path d={arm} class="saddle" />{/each}
