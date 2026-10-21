@@ -39,7 +39,9 @@ const saddleArms = { left: arm(-1), right: arm(1) };
 function saddleConsumption(k) {
   const points = k < steady.k ? saddleArms.left : saddleArms.right;
   const exact = points.findIndex(p => (k < steady.k ? p.k <= k : p.k >= k));
-  if (exact < 1) return exact === 0 ? points[0].c : steady.c;
+  if (exact === 0) return points[0].c;
+  // Beyond the computed arm: run the left arm straight to the origin, hold the right arm flat.
+  if (exact === -1) { const end = points[points.length - 1]; return k < steady.k ? end.c * k / end.k : end.c; }
   const a = points[exact - 1], b = points[exact];
   return a.c + (b.c - a.c) * (k - a.k) / (b.k - a.k);
 }
@@ -50,6 +52,7 @@ function simulate(k0, c0, onSaddle = false) {
     const sign = k0 < steady.k ? -1 : 1;
     const points = sign < 0 ? saddleArms.left : saddleArms.right;
     let j = points.findIndex(p => sign < 0 ? p.k <= k0 : p.k >= k0);
+    if (j === -1) j = points.length - 1;
     if (j < 1) j = 1;
     const startBack = points[j].backTime;
     const trajectory = [];
