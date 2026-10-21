@@ -43,9 +43,9 @@
     const anchor = (k, above) => { const c = clamp({ k, c: m.netOutput(k) }).c; return { k, c: above ? (c + cMax) / 2 : c / 2 }; };
     return [
       { color: '#3f74d1', dx: -1, dy: 1, poly: [{ k: 0, c: cMax }, { k: ks, c: cMax }, ...[...left].reverse()], at: anchor(.5 * ks, true) },
-      { color: '#173f8f', dx: 1, dy: 1, poly: [...left, { k: ks, c: 0 }, { k: 0, c: 0 }], at: anchor(.5 * ks, false) },
-      { color: '#d9545e', dx: -1, dy: -1, poly: [...right, { k: kMax, c: cMax }, { k: ks, c: cMax }], at: anchor((ks + kMax) / 2, true) },
-      { color: '#9a1f2a', dx: 1, dy: -1, poly: [...right, { k: kMax, c: 0 }, { k: ks, c: 0 }], at: anchor((ks + kMax) / 2, false) },
+      { color: '#d9545e', dx: 1, dy: 1, poly: [...left, { k: ks, c: 0 }, { k: 0, c: 0 }], at: anchor(.5 * ks, false) },
+      { color: '#9a1f2a', dx: -1, dy: -1, poly: [...right, { k: kMax, c: cMax }, { k: ks, c: cMax }], at: anchor((ks + kMax) / 2, true) },
+      { color: '#173f8f', dx: 1, dy: -1, poly: [...right, { k: kMax, c: 0 }, { k: ks, c: 0 }], at: anchor((ks + kMax) / 2, false) },
     ];
   }
   // A joined pair of arrows from one corner: one horizontal (k), one vertical (c).
@@ -164,7 +164,7 @@
       {#each ticksK as tick}<line x1={X(tick)} x2={X(tick)} y1={plot.top} y2={plot.top + plot.height} class="grid" /><text x={X(tick)} y={plot.top + plot.height + 22} class="tick" text-anchor="middle">{tick}</text>{/each}
       {#each ticksC as tick}<line x1={plot.left} x2={plot.left + plot.width} y1={Y(tick)} y2={Y(tick)} class="grid" /><text x={plot.left - 12} y={Y(tick) + 4} class="tick" text-anchor="end">{tick.toFixed(1)}</text>{/each}
       <g clip-path="url(#phase-clip)">
-        {#if showQuads}{#each quads as q}<path d={path(q.poly) + ' Z'} fill={q.color} fill-opacity=".12" />{/each}{/if}
+        {#if showQuads}{#each quads as q}<path d={path(q.poly) + ' Z'} fill={q.color} fill-opacity=".16" />{/each}{/if}
         {#each arrows as a}
           <line x1={a.x-4.55*a.ux} y1={a.y-4.55*a.uy} x2={a.x+4.55*a.ux} y2={a.y+4.55*a.uy} class="vector" marker-end="url(#phase-arrow)" />
           <path class="flow-arrow" d={head(a)} opacity="0">
