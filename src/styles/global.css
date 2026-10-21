@@ -41,6 +41,8 @@ p { margin-bottom: 1.1em; }
 .site-header { border-bottom: 1px solid var(--rule); background: var(--paper); position: relative; z-index: 5; }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 32px; }.wordmark { display: inline-flex; text-decoration: none; }
 .site-logo { display: block; width: 200px; height: auto; flex-shrink: 0; }
+.brand { display: flex; align-items: center; gap: 16px; }
+.course-title { padding-left: 16px; border-left: 1px solid var(--rule); font-family: 'Source Sans Pro', sans-serif; font-size: 1rem; font-weight: 600; color: var(--ink); line-height: 1.2; white-space: nowrap; }
 .skip-link { position: absolute; top: -100px; left: 24px; background: var(--accent); color: var(--paper); padding: 12px 18px; z-index: 100; }
 .skip-link:focus { top: 10px; }
 .home { padding: 70px 32px 60px; }

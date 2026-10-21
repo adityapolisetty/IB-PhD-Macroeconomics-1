@@ -19,7 +19,10 @@ const { title = courseTitle, description = 'Interactive models, written intuitio
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header">
       <div class="header-inner">
-        <a class="wordmark" href={withBase('utility-functions/')} aria-label="Imperial · Utility functions"><img class="site-logo" src={withBase('imperial-logo.svg')} alt="Imperial" width="1548" height="170" /></a>
+        <div class="brand">
+          <a class="wordmark" href={withBase('utility-functions/')} aria-label="Imperial · Utility functions"><img class="site-logo" src={withBase('imperial-logo.svg')} alt="Imperial" width="1548" height="170" /></a>
+          <span class="course-title">IB PhD Macro 1</span>
+        </div>
       </div>
     </header>
     <slot />
