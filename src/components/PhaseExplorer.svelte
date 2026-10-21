@@ -159,7 +159,7 @@
     <span class="hint">Click or drag on the plot to set the start</span>
     </div>
     <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Interactive phase diagram with capital on the horizontal axis, consumption on the vertical axis, vector field, nullclines, saddle path and moving economy marker" on:pointermove={pointer} on:pointerup={() => drag = false} on:pointercancel={() => drag = false} on:pointerleave={() => hover = null}>
-      <defs><clipPath id="phase-clip"><rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} /></clipPath><marker id="phase-arrow" markerWidth="3.5" markerHeight="3.5" refX="2.8" refY="1.75" orient="auto"><path d="M0,0 L3.5,1.75 L0,3.5" fill="none" stroke="#8793bd" stroke-width="1.3" /></marker></defs>
+      <defs><clipPath id="phase-clip"><rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} /></clipPath><marker id="phase-arrow" markerWidth="3.5" markerHeight="3.5" refX="2.8" refY="1.75" orient="auto"><path d="M0,0 L3.5,1.75 L0,3.5" fill="none" stroke="#111318" stroke-width="1.3" /></marker></defs>
       <rect x={plot.left} y={plot.top} width={plot.width} height={plot.height} fill="#fbfcff" />
       {#each ticksK as tick}<line x1={X(tick)} x2={X(tick)} y1={plot.top} y2={plot.top + plot.height} class="grid" /><text x={X(tick)} y={plot.top + plot.height + 22} class="tick" text-anchor="middle">{tick}</text>{/each}
       {#each ticksC as tick}<line x1={plot.left} x2={plot.left + plot.width} y1={Y(tick)} y2={Y(tick)} class="grid" /><text x={plot.left - 12} y={Y(tick) + 4} class="tick" text-anchor="end">{tick.toFixed(1)}</text>{/each}
@@ -169,7 +169,7 @@
           <line x1={a.x-4.55*a.ux} y1={a.y-4.55*a.uy} x2={a.x+4.55*a.ux} y2={a.y+4.55*a.uy} class="vector" marker-end="url(#phase-arrow)" />
           <path class="flow-arrow" d={head(a)} opacity="0">
             <animateTransform attributeName="transform" type="translate" from={`${a.x-4.55*a.ux} ${a.y-4.55*a.uy}`} to={`${a.x+4.55*a.ux} ${a.y+4.55*a.uy}`} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;.95;.95;0" keyTimes="0;.18;.78;1" dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;.45;.45;0" keyTimes="0;.18;.78;1" dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
           </path>
         {/each}
         <path d={path(curve)} class="nullcline" />
@@ -222,8 +222,8 @@
   .tick { font: 14px 'Source Sans Pro', sans-serif; fill: #111318; }
   .frame { fill: none; stroke: #8691a7; stroke-width: 1.5; pointer-events: none; }
   .axis-label { font: 16px 'Source Sans Pro', sans-serif; fill: #111318; }
-  .vector { stroke: #98a5c7; stroke-width: 1.35; opacity: .74; }
-  .flow-arrow { fill: none; stroke: #184199; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+  .vector { stroke: #111318; stroke-width: 1.35; opacity: .35; }
+  .flow-arrow { fill: none; stroke: #111318; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
   .nullcline { fill: none; stroke: #6e8699; stroke-width: 3.2; }
   .consumption-line { stroke: #7388a5; stroke-width: 2.5; stroke-dasharray: 7 6; }
   .saddle { fill: none; stroke: #111318; stroke-width: 4; opacity: .9; }
