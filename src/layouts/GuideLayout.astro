@@ -6,11 +6,13 @@ const { title, description, current } = Astro.props;
 
 // Every guide page appears in the side index, in this order.
 const pages = [
-  { slug: 'utility-functions', label: 'Utility functions' },
-  { slug: 'production-functions', label: 'Production functions' },
+  { slug: 'utility-functions', label: 'Utility functions', hidden: true },
+  { slug: 'production-functions', label: 'Production functions', hidden: true },
   { slug: 'phase-diagram', label: 'Phase diagram' },
 ];
 if (!pages.some(page => page.slug === current)) throw new Error(`Unknown guide page: ${current}`);
+// Hidden pages are still built, just left out of the index for now.
+const listed = pages.filter(page => !page.hidden);
 ---
 
 <SiteLayout title={title} description={description}>
@@ -23,7 +25,7 @@ if (!pages.some(page => page.slug === current)) throw new Error(`Unknown guide p
         <p class="index-title">Contents</p>
       </div>
       <nav id="guide-nav">
-        {pages.map((page, i) => (
+        {listed.map((page, i) => (
           <a href={withBase(`${page.slug}/`)} aria-current={page.slug === current ? 'page' : undefined}>
             <span class="index-number">{String(i + 1).padStart(2, '0')}</span>
             <span>{page.label}</span>
