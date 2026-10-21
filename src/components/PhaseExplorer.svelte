@@ -45,10 +45,10 @@
     const left = [...curve.filter(p => p.k < ks), mid].map(clamp), right = [mid, ...curve.filter(p => p.k > ks)].map(clamp);
     const anchor = (k, above) => { const c = clamp({ k, c: m.netOutput(k) }).c; return { k, c: above ? (c + cMax) / 2 : c / 2 }; };
     return [
-      { color: '#3f74d1', dx: -1, dy: 1, poly: [{ k: 0, c: cMax }, { k: ks, c: cMax }, ...[...left].reverse()], at: anchor(.5 * ks, true) },
-      { color: '#d9545e', dx: 1, dy: 1, poly: [...left, { k: ks, c: 0 }, { k: 0, c: 0 }], at: anchor(.5 * ks, false) },
-      { color: '#9a1f2a', dx: -1, dy: -1, poly: [...right, { k: kMax, c: cMax }, { k: ks, c: cMax }], at: anchor((ks + kMax) / 2, true) },
-      { color: '#173f8f', dx: 1, dy: -1, poly: [...right, { k: kMax, c: 0 }, { k: ks, c: 0 }], at: anchor((ks + kMax) / 2, false) },
+      { color: '#2f6fd0', dx: -1, dy: 1, poly: [{ k: 0, c: cMax }, { k: ks, c: cMax }, ...[...left].reverse()], at: anchor(.5 * ks, true) },
+      { color: '#2e9a4f', dx: 1, dy: 1, poly: [...left, { k: ks, c: 0 }, { k: 0, c: 0 }], at: anchor(.5 * ks, false) },
+      { color: '#c8323e', dx: -1, dy: -1, poly: [...right, { k: kMax, c: cMax }, { k: ks, c: cMax }], at: anchor((ks + kMax) / 2, true) },
+      { color: '#e07a1f', dx: 1, dy: -1, poly: [...right, { k: kMax, c: 0 }, { k: ks, c: 0 }], at: anchor((ks + kMax) / 2, false) },
     ];
   }
   // A joined pair of arrows from one corner: one horizontal (k), one vertical (c).
