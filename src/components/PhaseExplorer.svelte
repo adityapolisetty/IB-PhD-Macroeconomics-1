@@ -168,7 +168,7 @@
         {#each arrows as a}
           <line x1={a.x-4.55*a.ux} y1={a.y-4.55*a.uy} x2={a.x+4.55*a.ux} y2={a.y+4.55*a.uy} class="vector" marker-end="url(#phase-arrow)" />
           <path class="flow-arrow" d={head(a)} opacity="0">
-            <animateTransform attributeName="transform" type="translate" from={`${a.x-4.55*a.ux} ${a.y-4.55*a.uy}`} to={`${a.x+4.55*a.ux} ${a.y+4.55*a.uy}`} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
+            <animateTransform attributeName="transform" type="translate" from={`${a.x-5.0*a.ux} ${a.y-5.0*a.uy}`} to={`${a.x+5.0*a.ux} ${a.y+5.0*a.uy}`} dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
             <animate attributeName="opacity" values="0;.45;.45;0" keyTimes="0;.18;.78;1" dur={`${a.duration}s`} begin={`${a.delay}s`} repeatCount="indefinite" />
           </path>
         {/each}
