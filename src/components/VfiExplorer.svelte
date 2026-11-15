@@ -4,12 +4,13 @@
   import { renderToString } from 'katex';
   import { makeVfi } from '../lib/vfi.js';
 
-  const W = 1040, H = 650;
-  const matrixPlot = { left: 270, top: 80, size: 500 };
-  const valuePlot = { left: 100, top: 80, width: 850, height: 500 };
+  const W = 960, H = 600;
+  const matrixPlot = { left: 74, top: 70, width: 860, height: 470 };
+  const valuePlot = { left: 74, top: 70, width: 860, height: 470 };
   const model = makeVfi({ N: 150, maxIteration: 120 });
   const { grid, values, matrices, policies, gaps, N, maxIteration, steady } = model;
-  const cell = matrixPlot.size / N;
+  const cellWidth = matrixPlot.width / N;
+  const cellHeight = matrixPlot.height / N;
   const kMin = grid[0], kMax = grid.at(-1);
   const valueMin = Math.floor(model.valueRange[0] / 5) * 5;
   const valueMax = Math.ceil(model.valueRange[1] / 5) * 5;
@@ -51,8 +52,8 @@
   $: activeContinuation = Number.isFinite(activeFlow) ? matrix[activeRow][activeColumn] - activeFlow : -Infinity;
   $: activeBest = policy[activeRow];
 
-  const MX = k => matrixPlot.left + (k - kMin) / (kMax - kMin) * matrixPlot.size;
-  const MY = k => matrixPlot.top + matrixPlot.size - (k - kMin) / (kMax - kMin) * matrixPlot.size;
+  const MX = k => matrixPlot.left + (k - kMin) / (kMax - kMin) * matrixPlot.width;
+  const MY = k => matrixPlot.top + matrixPlot.height - (k - kMin) / (kMax - kMin) * matrixPlot.height;
   const VX = k => valuePlot.left + (k - kMin) / (kMax - kMin) * valuePlot.width;
   const VY = v => valuePlot.top + valuePlot.height - (v - valueMin) / (valueMax - valueMin) * valuePlot.height;
   const valuePath = series => series.map((v, i) => `${i ? 'L' : 'M'}${VX(grid[i]).toFixed(2)},${VY(v).toFixed(2)}`).join(' ');
@@ -108,11 +109,11 @@
     const p = chart.createSVGPoint();
     p.x = event.clientX; p.y = event.clientY;
     const q = p.matrixTransform(chart.getScreenCTM().inverse());
-    const inside = q.x >= matrixPlot.left && q.x <= matrixPlot.left + matrixPlot.size
-      && q.y >= matrixPlot.top && q.y <= matrixPlot.top + matrixPlot.size;
+    const inside = q.x >= matrixPlot.left && q.x <= matrixPlot.left + matrixPlot.width
+      && q.y >= matrixPlot.top && q.y <= matrixPlot.top + matrixPlot.height;
     if (!inside) { hover = null; return; }
-    const j = Math.max(0, Math.min(N - 1, Math.floor((q.x - matrixPlot.left) / cell)));
-    const fromTop = Math.max(0, Math.min(N - 1, Math.floor((q.y - matrixPlot.top) / cell)));
+    const j = Math.max(0, Math.min(N - 1, Math.floor((q.x - matrixPlot.left) / cellWidth)));
+    const fromTop = Math.max(0, Math.min(N - 1, Math.floor((q.y - matrixPlot.top) / cellHeight)));
     hover = { i: N - 1 - fromTop, j };
   }
   function frame(now) {
@@ -205,20 +206,20 @@
       {#if viewMode === 'matrix'}
         <text x={matrixPlot.left} y="32" class="chart-title">Candidate matrix</text>
         <text x={matrixPlot.left} y="55" class="chart-subtitle">Rows: current capital · columns: next capital · white cells: row maxima</text>
-        <foreignObject x={matrixPlot.left} y={matrixPlot.top} width={matrixPlot.size} height={matrixPlot.size}>
+        <foreignObject x={matrixPlot.left} y={matrixPlot.top} width={matrixPlot.width} height={matrixPlot.height}>
           <canvas xmlns="http://www.w3.org/1999/xhtml" bind:this={matrixCanvas} class="matrix-canvas" width={N} height={N} aria-hidden="true"></canvas>
         </foreignObject>
-        <rect x={matrixPlot.left} y={matrixPlot.top + (N - 1 - activeRow) * cell} width={matrixPlot.size} height={cell} class="selected-row" />
-        <rect x={matrixPlot.left + activeColumn * cell + .5} y={matrixPlot.top + (N - 1 - activeRow) * cell + .5} width={Math.max(1, cell - 1)} height={Math.max(1, cell - 1)} class="selected-cell" />
-        <rect x={matrixPlot.left} y={matrixPlot.top} width={matrixPlot.size} height={matrixPlot.size} class="frame" />
+        <rect x={matrixPlot.left} y={matrixPlot.top + (N - 1 - activeRow) * cellHeight} width={matrixPlot.width} height={cellHeight} class="selected-row" />
+        <rect x={matrixPlot.left + activeColumn * cellWidth + .5} y={matrixPlot.top + (N - 1 - activeRow) * cellHeight + .5} width={Math.max(1, cellWidth - 1)} height={Math.max(1, cellHeight - 1)} class="selected-cell" />
+        <rect x={matrixPlot.left} y={matrixPlot.top} width={matrixPlot.width} height={matrixPlot.height} class="frame" />
         {#each kTicks as tick}
-          <line x1={MX(Math.max(kMin, Math.min(kMax, tick)))} x2={MX(Math.max(kMin, Math.min(kMax, tick)))} y1={matrixPlot.top + matrixPlot.size} y2={matrixPlot.top + matrixPlot.size + 7} class="axis-tick" />
+          <line x1={MX(Math.max(kMin, Math.min(kMax, tick)))} x2={MX(Math.max(kMin, Math.min(kMax, tick)))} y1={matrixPlot.top + matrixPlot.height} y2={matrixPlot.top + matrixPlot.height + 7} class="axis-tick" />
           <line x1={matrixPlot.left - 7} x2={matrixPlot.left} y1={MY(Math.max(kMin, Math.min(kMax, tick)))} y2={MY(Math.max(kMin, Math.min(kMax, tick)))} class="axis-tick" />
-          <text x={MX(Math.max(kMin, Math.min(kMax, tick)))} y={matrixPlot.top + matrixPlot.size + 27} class="tick" text-anchor="middle">{tick.toFixed(1)}</text>
+          <text x={MX(Math.max(kMin, Math.min(kMax, tick)))} y={matrixPlot.top + matrixPlot.height + 27} class="tick" text-anchor="middle">{tick.toFixed(1)}</text>
           <text x={matrixPlot.left - 15} y={MY(Math.max(kMin, Math.min(kMax, tick))) + 5} class="tick" text-anchor="end">{tick.toFixed(1)}</text>
         {/each}
-        <text x={matrixPlot.left + matrixPlot.size / 2} y={H - 10} class="axis-label" text-anchor="middle">Next capital, k′</text>
-        <text transform={`translate(${matrixPlot.left - 80} ${matrixPlot.top + matrixPlot.size / 2}) rotate(-90)`} class="axis-label" text-anchor="middle">Current capital, k</text>
+        <text x={matrixPlot.left + matrixPlot.width / 2} y={H - 10} class="axis-label" text-anchor="middle">Next capital, k′</text>
+        <text transform={`translate(19 ${matrixPlot.top + matrixPlot.height / 2}) rotate(-90)`} class="axis-label" text-anchor="middle">Current capital, k</text>
       {:else}
         <text x={valuePlot.left} y="32" class="chart-title">Value-function convergence</text>
         <text x={valuePlot.left} y="55" class="chart-subtitle">Input Vₙ, row maxima Vₙ₊₁, and the converged function</text>
@@ -238,7 +239,7 @@
         </g>
         <rect x={valuePlot.left} y={valuePlot.top} width={valuePlot.width} height={valuePlot.height} class="frame" />
         <text x={valuePlot.left + valuePlot.width / 2} y={H - 10} class="axis-label" text-anchor="middle">Capital, k</text>
-        <text transform={`translate(35 ${valuePlot.top + valuePlot.height / 2}) rotate(-90)`} class="axis-label" text-anchor="middle">Value</text>
+        <text transform={`translate(19 ${valuePlot.top + valuePlot.height / 2}) rotate(-90)`} class="axis-label" text-anchor="middle">Value</text>
         <g class="legend" transform={`translate(${valuePlot.left + 16} ${valuePlot.top + 22})`}>
           <line x1="0" x2="25" y1="0" y2="0" class="value-output" /><text x="32" y="4">Vₙ₊₁</text>
           <line x1="95" x2="120" y1="0" y2="0" class="value-input" /><text x="127" y="4">Vₙ</text>
@@ -252,7 +253,7 @@
 
 <style>
   .vfi-page { padding: 36px 0 10px; color: #1d263c; line-height: 1.5; }
-  .visual-shell { display: grid; grid-template-columns: 310px minmax(0, 1fr); align-items: center; border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
+  .visual-shell { display: grid; grid-template-columns: 320px minmax(0, 1fr); align-items: center; border: 1px solid #dce3f0; border-radius: 18px; box-shadow: 0 16px 45px rgba(37,58,102,.055); overflow: hidden; background: white; }
   .controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; padding: 18px 18px 18px 22px; border-right: 1px solid #e6eaf1; }
   .controls input[type=range] { accent-color: #111318; }
   .panel-head { margin: 0 0 -6px; font-size: 1.05rem; font-weight: 700; color: #111318; letter-spacing: 0; }
@@ -283,7 +284,7 @@
   .hint { color: #111318; font-size: .72rem; font-style: italic; }
   .chart-stage { min-width: 0; }
   .matrix-canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
-  svg { width: 100%; height: auto; max-height: calc(100vh - 150px); min-height: 360px; display: block; touch-action: none; }
+  svg { width: 100%; height: auto; max-height: calc(100vh - 185px); min-height: 300px; display: block; touch-action: none; }
   .chart-title { font: 700 17px 'Source Sans Pro', sans-serif; fill: #111318; }
   .chart-subtitle { font: 13px 'Source Sans Pro', sans-serif; fill: #606b7d; }
   .selected-row { fill: none; stroke: #e49350; stroke-width: 2; pointer-events: none; }
