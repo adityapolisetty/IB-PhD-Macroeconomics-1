@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { solow, household, shoot, bisectShooting, stableConsumption, growthSteady, bellman, bellmanGrid } from '../src/lib/models.js';
 import { steady, limits, netOutput, velocity, saddleConsumption, simulate } from '../src/lib/phase.js';
+import { makeVfi } from '../src/lib/vfi.js';
 const near = (actual, expected, tolerance = 1e-10) => assert.ok(Math.abs(actual - expected) < tolerance, `${actual} differs from ${expected}`);
 const cases = [];
 function check(name, fn) { fn(); cases.push(name); }
@@ -79,6 +80,21 @@ check('Bellman feasibility, maximisers and contraction', () => {
     assert.ok(values.every(Number.isFinite));
   }
   assert.ok(gap < 1e-6);
+});
+check('VFI matrix, row maxima and 120-update convergence', () => {
+  const m = makeVfi({ N: 25, maxIteration: 120 });
+  assert.equal(m.matrices.length, 121);
+  assert.equal(m.matrices[0].length, 25);
+  assert.equal(m.matrices[0][0].length, 25);
+  assert.ok(m.matrices[0].flat().some(v => v === -Infinity));
+  for (const n of [0, 1, 30, 60, 120]) {
+    for (let i = 0; i < m.N; i++) {
+      near(m.values[n + 1][i], Math.max(...m.matrices[n][i]));
+      assert.equal(m.policies[n][i], m.matrices[n][i].indexOf(m.values[n + 1][i]));
+    }
+  }
+  assert.ok(m.gaps[120] < 1e-5);
+  assert.ok(m.gaps.every((gap, i) => i === 0 || gap <= .9 * m.gaps[i - 1] + 1e-10));
 });
 const data = JSON.parse(await readFile(new URL('../src/data/model-data.json', import.meta.url), 'utf8'));
 check('Extraction homogeneity and capacity costs', () => {

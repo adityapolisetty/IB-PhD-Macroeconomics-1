@@ -1,0 +1,8 @@
+---
+import GuideLayout from '../layouts/GuideLayout.astro';
+import VfiExplorer from '../components/VfiExplorer.svelte';
+---
+
+<GuideLayout title="Value function iteration" description="Watch the Bellman choice-value matrix build a converged value function over 120 updates." current="value-function-iteration">
+  <VfiExplorer client:load />
+</GuideLayout>

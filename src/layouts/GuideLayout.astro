@@ -9,6 +9,7 @@ const pages = [
   { slug: 'utility-functions', label: 'Utility functions', hidden: true },
   { slug: 'production-functions', label: 'Production functions', hidden: true },
   { slug: 'phase-diagram', label: 'Phase diagram' },
+  { slug: 'value-function-iteration', label: 'Value function iteration' },
 ];
 if (!pages.some(page => page.slug === current)) throw new Error(`Unknown guide page: ${current}`);
 // Hidden pages are still built, just left out of the index for now.
