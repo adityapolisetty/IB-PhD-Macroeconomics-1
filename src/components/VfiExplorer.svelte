@@ -7,7 +7,7 @@
   const W = 1040, H = 560;
   const matrixPlot = { left: 58, top: 62, size: 405 };
   const valuePlot = { left: 575, top: 62, width: 410, height: 405 };
-  const model = makeVfi({ N: 25, maxIteration: 120 });
+  const model = makeVfi({ N: 150, maxIteration: 120 });
   const { grid, values, matrices, gaps, N, maxIteration, steady } = model;
   const cell = matrixPlot.size / N;
   const kMin = grid[0], kMax = grid.at(-1);
@@ -34,6 +34,8 @@
   let lastFrame = 0;
   let animationId;
   let chart;
+  let matrixCanvas;
+  let matrixImage;
   let hover = null;
 
   const interpolateVector = (a, b, w) => a.map((v, i) => v + w * (b[i] - v));
@@ -66,14 +68,34 @@
   const VX = k => valuePlot.left + (k - kMin) / (kMax - kMin) * valuePlot.width;
   const VY = v => valuePlot.top + valuePlot.height - (v - valueMin) / (valueMax - valueMin) * valuePlot.height;
   const valuePath = series => series.map((v, i) => `${i ? 'L' : 'M'}${VX(grid[i]).toFixed(2)},${VY(v).toFixed(2)}`).join(' ');
-  const heat = value => {
-    if (!Number.isFinite(value)) return 'url(#vfi-hatch)';
+  const heatRgb = value => {
+    if (!Number.isFinite(value)) return [241, 242, 245];
     const [min, max] = model.matrixRange;
     const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
     const eased = .08 + .92 * t;
     const mix = (a, b) => Math.round(a + eased * (b - a));
-    return `rgb(${mix(238, 0)},${mix(238, 0)},${mix(255, 205)})`;
+    return [mix(238, 0), mix(238, 0), mix(255, 205)];
   };
+
+  function paintMatrix(current, currentPolicy) {
+    if (!matrixCanvas) return;
+    const context = matrixCanvas.getContext('2d');
+    if (!matrixImage) matrixImage = context.createImageData(N, N);
+    const pixels = matrixImage.data;
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j < N; j++) {
+        const offset = ((N - 1 - i) * N + j) * 4;
+        const color = j === currentPolicy[i] ? [255, 255, 255] : heatRgb(current[i][j]);
+        pixels[offset] = color[0];
+        pixels[offset + 1] = color[1];
+        pixels[offset + 2] = color[2];
+        pixels[offset + 3] = 255;
+      }
+    }
+    context.putImageData(matrixImage, 0, 0);
+  }
+
+  $: paintMatrix(matrix, policy);
 
   function setIteration(event) {
     playing = false;
@@ -171,41 +193,17 @@
       <span class="hint">Move across matrix cells to inspect one candidate choice</span>
     </div>
 
-    <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Value function iteration ${lo} to ${lo + 1}, with an N by N choice-value matrix and converging value functions`} on:pointermove={pointer} on:pointerleave={() => hover = null}>
+    <div class="chart-stage">
+      <canvas bind:this={matrixCanvas} class="matrix-canvas" width={N} height={N} aria-hidden="true"></canvas>
+      <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Value function iteration ${lo} to ${lo + 1}, with an N by N choice-value matrix and converging value functions`} on:pointermove={pointer} on:pointerleave={() => hover = null}>
       <defs>
-        <pattern id="vfi-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(135)">
-          <rect width="7" height="7" fill="#f1f2f5" />
-          <line x1="0" y1="0" x2="0" y2="7" stroke="#a9afba" stroke-width="1" />
-        </pattern>
         <clipPath id="vfi-value-clip"><rect x={valuePlot.left} y={valuePlot.top} width={valuePlot.width} height={valuePlot.height} /></clipPath>
       </defs>
 
       <text x={matrixPlot.left} y="30" class="chart-title">Candidate matrix</text>
-      <text x={matrixPlot.left} y="49" class="chart-subtitle">Rows: current k · columns: candidate k′ · dots: row maxima</text>
+      <text x={matrixPlot.left} y="49" class="chart-subtitle">Rows: current k · columns: candidate k′ · white cells: row maxima</text>
       <text x={valuePlot.left} y="30" class="chart-title">Value-function convergence</text>
       <text x={valuePlot.left} y="49" class="chart-subtitle">Input Vₙ, row maxima Vₙ₊₁, and the converged function</text>
-
-      {#each matrix as row, i}
-        {#each row as value, j}
-          <rect
-            x={matrixPlot.left + j * cell + .5}
-            y={matrixPlot.top + (N - 1 - i) * cell + .5}
-            width={cell - 1}
-            height={cell - 1}
-            rx="1.2"
-            fill={heat(value)}
-            class="cell"
-          >
-            <title>{Number.isFinite(value) ? `k=${grid[i].toFixed(2)}, k′=${grid[j].toFixed(2)}, value=${value.toFixed(3)}` : `k=${grid[i].toFixed(2)}, k′=${grid[j].toFixed(2)}: infeasible`}</title>
-          </rect>
-        {/each}
-        <circle
-          cx={matrixPlot.left + (policy[i] + .5) * cell}
-          cy={matrixPlot.top + (N - 1 - i + .5) * cell}
-          r="2.4"
-          class="policy-dot"
-        />
-      {/each}
 
       <rect x={matrixPlot.left} y={matrixPlot.top + (N - 1 - activeRow) * cell} width={matrixPlot.size} height={cell} class="selected-row" />
       <rect x={matrixPlot.left + activeColumn * cell + 1} y={matrixPlot.top + (N - 1 - activeRow) * cell + 1} width={cell - 2} height={cell - 2} class="selected-cell" />
@@ -240,7 +238,8 @@
         <line x1="95" x2="120" y1="0" y2="0" class="value-input" /><text x="127" y="4">Vₙ</text>
         <line x1="173" x2="198" y1="0" y2="0" class="value-limit" /><text x="205" y="4">limit</text>
       </g>
-    </svg>
+      </svg>
+    </div>
   </div>
 </section>
 
@@ -273,11 +272,11 @@
   .speed { display: flex; align-items: center; gap: 7px; font-size: .75rem; color: #111318; }
   .speed select { width: auto; border-radius: 7px; background: white; border-color: #d8dfed; color: #1d263c; font-size: .75rem; }
   .hint { color: #111318; font-size: .72rem; font-style: italic; }
-  svg { width: 100%; height: auto; max-height: calc(100vh - 185px); min-height: 330px; display: block; touch-action: none; }
+  .chart-stage { position: relative; min-width: 0; }
+  .matrix-canvas { position: absolute; z-index: 0; left: 5.576923%; top: 11.071429%; width: 38.942308%; height: 72.321429%; image-rendering: pixelated; pointer-events: none; }
+  svg { position: relative; z-index: 1; width: 100%; height: auto; max-height: calc(100vh - 185px); min-height: 330px; display: block; touch-action: none; }
   .chart-title { font: 700 17px 'Source Sans Pro', sans-serif; fill: #111318; }
   .chart-subtitle { font: 13px 'Source Sans Pro', sans-serif; fill: #606b7d; }
-  .cell { transition: fill .13s linear; }
-  .policy-dot { fill: white; stroke: #111318; stroke-width: .9; transition: cx .16s ease; pointer-events: none; }
   .selected-row { fill: none; stroke: #e49350; stroke-width: 2; pointer-events: none; }
   .selected-cell { fill: none; stroke: #111318; stroke-width: 2; pointer-events: none; }
   .grid { stroke: #edf1f8; stroke-width: 1; }
@@ -291,5 +290,5 @@
   @media(max-width:1000px) { .visual-shell { grid-template-columns: 280px minmax(0, 1fr); } }
   @media(max-width:850px) { .visual-shell { grid-template-columns: 1fr; }.controls { border-right: 0; border-bottom: 1px solid #e6eaf1; } svg { max-height: none; } }
   @media(max-width:550px) { .chart-subtitle { display: none; }.chart-title { font-size: 15px; }.tick { font-size: 12px; } }
-  @media(prefers-reduced-motion:reduce) { .cell, .policy-dot, .play, .reset { transition: none; } }
+  @media(prefers-reduced-motion:reduce) { .play, .reset { transition: none; } }
 </style>

@@ -5,7 +5,7 @@ export const vfiParameters = {
   alpha: .3,
 };
 
-export function makeVfi({ A = 1, beta = .9, delta = .1, alpha = .3, N = 25, maxIteration = 120 } = {}) {
+export function makeVfi({ A = 1, beta = .9, delta = .1, alpha = .3, N = 150, maxIteration = 120 } = {}) {
   const steady = (alpha * A / (1 / beta - (1 - delta))) ** (1 / (1 - alpha));
   const grid = Array.from({ length: N }, (_, i) => .001 + i * (2 * steady - .001) / (N - 1));
   const consumption = grid.map(k => grid.map(next => A * k ** alpha + (1 - delta) * k - next));
@@ -14,6 +14,8 @@ export function makeVfi({ A = 1, beta = .9, delta = .1, alpha = .3, N = 25, maxI
   const matrices = [];
   const policies = [];
   const gaps = [];
+  let matrixMin = Infinity, matrixMax = -Infinity;
+  let valueMin = 0, valueMax = 0;
 
   for (let n = 0; n <= maxIteration; n++) {
     const matrix = flow.map(row => row.map((u, j) => Number.isFinite(u) ? u + beta * values[n][j] : -Infinity));
@@ -23,11 +25,17 @@ export function makeVfi({ A = 1, beta = .9, delta = .1, alpha = .3, N = 25, maxI
     for (let i = 0; i < N; i++) {
       let best = -Infinity, bestIndex = 0;
       for (let j = 0; j < N; j++) {
+        if (Number.isFinite(matrix[i][j])) {
+          matrixMin = Math.min(matrixMin, matrix[i][j]);
+          matrixMax = Math.max(matrixMax, matrix[i][j]);
+        }
         if (matrix[i][j] > best) { best = matrix[i][j]; bestIndex = j; }
       }
       next.push(best);
       policy.push(bestIndex);
       gap = Math.max(gap, Math.abs(best - values[n][i]));
+      valueMin = Math.min(valueMin, best);
+      valueMax = Math.max(valueMax, best);
     }
     matrices.push(matrix);
     policies.push(policy);
@@ -35,8 +43,6 @@ export function makeVfi({ A = 1, beta = .9, delta = .1, alpha = .3, N = 25, maxI
     values.push(next);
   }
 
-  const finiteMatrixValues = matrices.flat(2).filter(Number.isFinite);
-  const finiteValues = values.flat().filter(Number.isFinite);
   return {
     parameters: { A, beta, delta, alpha },
     N,
@@ -49,7 +55,7 @@ export function makeVfi({ A = 1, beta = .9, delta = .1, alpha = .3, N = 25, maxI
     matrices,
     policies,
     gaps,
-    matrixRange: [Math.min(...finiteMatrixValues), Math.max(...finiteMatrixValues)],
-    valueRange: [Math.min(...finiteValues), Math.max(...finiteValues)],
+    matrixRange: [matrixMin, matrixMax],
+    valueRange: [valueMin, valueMax],
   };
 }
