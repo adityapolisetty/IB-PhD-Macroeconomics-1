@@ -277,7 +277,7 @@
   .chart-title { font: 700 17px 'Source Sans Pro', sans-serif; fill: #111318; }
   .chart-subtitle { font: 13px 'Source Sans Pro', sans-serif; fill: #606b7d; }
   .cell { transition: fill .13s linear; }
-  .policy-dot { fill: #111318; transition: cx .16s ease; pointer-events: none; }
+  .policy-dot { fill: white; stroke: #111318; stroke-width: .9; transition: cx .16s ease; pointer-events: none; }
   .selected-row { fill: none; stroke: #e49350; stroke-width: 2; pointer-events: none; }
   .selected-cell { fill: none; stroke: #111318; stroke-width: 2; pointer-events: none; }
   .grid { stroke: #edf1f8; stroke-width: 1; }
