@@ -197,11 +197,24 @@
       <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={viewMode === 'matrix' ? `Value function iteration ${lo} to ${lo + 1}: N by N candidate matrix` : `Value function iteration ${lo} to ${lo + 1}: converging value functions`} on:pointermove={pointer} on:pointerleave={() => hover = null}>
       <defs>
         <clipPath id="vfi-value-clip"><rect x={valuePlot.left} y={valuePlot.top} width={valuePlot.width} height={valuePlot.height} /></clipPath>
+        <linearGradient id="vfi-heat-legend" x1="0" x2="1">
+          <stop offset="0" stop-color="rgb(219,219,251)" />
+          <stop offset="1" stop-color="rgb(0,0,205)" />
+        </linearGradient>
       </defs>
 
       {#if viewMode === 'matrix'}
         <text x={matrixPlot.left} y="32" class="chart-title">Candidate matrix</text>
         <text x={matrixPlot.left} y="55" class="chart-subtitle">Rows: current capital · columns: next capital · white cells: row maxima</text>
+        <g class="heat-legend" transform={`translate(${matrixPlot.left + matrixPlot.width - 340} 32)`}>
+          <text x="0" y="4">lower</text>
+          <rect x="38" y="-8" width="90" height="12" rx="3" fill="url(#vfi-heat-legend)" />
+          <text x="135" y="4">higher</text>
+          <rect x="181" y="-8" width="12" height="12" fill="white" stroke="#111318" />
+          <text x="200" y="4">row max</text>
+          <rect x="257" y="-8" width="12" height="12" fill="#f1f2f5" stroke="#a9afba" />
+          <text x="276" y="4">infeasible</text>
+        </g>
         <foreignObject x={matrixPlot.left} y={matrixPlot.top} width={matrixPlot.width} height={matrixPlot.height}>
           <canvas xmlns="http://www.w3.org/1999/xhtml" bind:this={matrixCanvas} class="matrix-canvas" width={N} height={N} aria-hidden="true"></canvas>
         </foreignObject>
@@ -308,6 +321,8 @@
   svg { width: 100%; height: auto; max-height: calc(100vh - 185px); min-height: 300px; display: block; touch-action: none; }
   .chart-title { font: 700 17px 'Source Sans Pro', sans-serif; fill: #111318; }
   .chart-subtitle { font: 13px 'Source Sans Pro', sans-serif; fill: #606b7d; }
+  .heat-legend { pointer-events: none; }
+  .heat-legend text { font: 12px 'Source Sans Pro', sans-serif; fill: #4f5a6d; }
   .selected-cell { fill: rgba(17,19,24,.22); stroke: #111318; stroke-width: 2.5; pointer-events: none; }
   .breakdown-object { pointer-events: none; }
   .cell-breakdown { box-sizing: border-box; height: 100%; padding: 14px 16px; border: 1px solid #111318; border-radius: 12px; background: rgba(255,255,255,.97); box-shadow: 0 12px 32px rgba(17,19,24,.18); color: #111318; font-family: 'Source Sans Pro', sans-serif; font-variant-numeric: tabular-nums; }
