@@ -24,8 +24,10 @@
   const texK = renderToString('k');
   const texKp = renderToString(String.raw`k'`);
   const texCurrent = renderToString(String.raw`\log c_{ij}`);
-  const texContinuation = renderToString(String.raw`\beta V_n(k'_j)`);
-  const texCandidate = renderToString(String.raw`M_n(i,j)`);
+  const texPrevious = renderToString(String.raw`V_{n-1}(k'_j)`);
+  const texContinuation = renderToString(String.raw`\beta V_{n-1}(k'_j)`);
+  const texCandidate = renderToString(String.raw`M_{n-1}(i,j)`);
+  const texNext = renderToString(String.raw`V_n(k_i)`);
   const fmt = (x, digits = 3) => Number.isFinite(x) ? x.toFixed(digits) : 'infeasible';
 
   let shown = 0;
@@ -48,8 +50,12 @@
   $: gap = gaps[lo];
   $: activeRow = hover ? hover.i : steadyRow;
   $: activeColumn = hover ? hover.j : policy[activeRow];
+  $: activeConsumption = model.consumption[activeRow][activeColumn];
   $: activeFlow = model.flow[activeRow][activeColumn];
+  $: activePrevious = inputValue[activeColumn];
   $: activeContinuation = Number.isFinite(activeFlow) ? matrix[activeRow][activeColumn] - activeFlow : -Infinity;
+  $: activeCell = matrix[activeRow][activeColumn];
+  $: activeNext = outputValue[activeRow];
   $: activeBest = policy[activeRow];
 
   const MX = k => matrixPlot.left + (k - kMin) / (kMax - kMin) * matrixPlot.width;
@@ -169,17 +175,7 @@
         <span class="divided"><em>Largest value change</em> <strong>{gap.toExponential(2)}</strong></span>
         <span><em>Error bound</em> <strong>{(gap / (1 - model.parameters.beta)).toExponential(2)}</strong></span>
         {#if viewMode === 'matrix'}
-          <span class="note">The white cell in each row is its maximum.</span>
-          <span class="divided"><em>Current state</em> {@html texK} <strong>{grid[activeRow].toFixed(2)}</strong></span>
-          <span><em>Candidate choice</em> {@html texKp} <strong>{grid[activeColumn].toFixed(2)}</strong></span>
-          {#if Number.isFinite(activeFlow)}
-            <span><em>Current utility</em> {@html texCurrent} <strong>{fmt(activeFlow)}</strong></span>
-            <span><em>Continuation</em> {@html texContinuation} <strong>{fmt(activeContinuation)}</strong></span>
-            <span class:best-choice={activeColumn === activeBest}><em>Cell value</em> {@html texCandidate} <strong>{fmt(matrix[activeRow][activeColumn])}</strong></span>
-          {:else}
-            <span class="note">This choice implies non-positive consumption and is infeasible.</span>
-          {/if}
-          <span class="note last">This row chooses {@html texKp} = <strong>{grid[activeBest].toFixed(2)}</strong>.</span>
+          <span class="note divided last">White cells are row maxima. Hover over any cell to open its Bellman decomposition.</span>
         {:else}
           <span class="note divided last">The row maxima form the blue function (V_{n+1}); repeated updates move it toward the dotted limit.</span>
         {/if}
@@ -209,8 +205,34 @@
         <foreignObject x={matrixPlot.left} y={matrixPlot.top} width={matrixPlot.width} height={matrixPlot.height}>
           <canvas xmlns="http://www.w3.org/1999/xhtml" bind:this={matrixCanvas} class="matrix-canvas" width={N} height={N} aria-hidden="true"></canvas>
         </foreignObject>
-        <rect x={matrixPlot.left} y={matrixPlot.top + (N - 1 - activeRow) * cellHeight} width={matrixPlot.width} height={cellHeight} class="selected-row" />
-        <rect x={matrixPlot.left + activeColumn * cellWidth + .5} y={matrixPlot.top + (N - 1 - activeRow) * cellHeight + .5} width={Math.max(1, cellWidth - 1)} height={Math.max(1, cellHeight - 1)} class="selected-cell" />
+        {#if hover}
+          <rect x={matrixPlot.left + activeColumn * cellWidth + .5} y={matrixPlot.top + (N - 1 - activeRow) * cellHeight + .5} width={Math.max(1, cellWidth - 1)} height={Math.max(1, cellHeight - 1)} class="selected-cell" />
+          <foreignObject class="breakdown-object" x={matrixPlot.left + matrixPlot.width - 385} y={matrixPlot.top + 18} width="365" height="270">
+            <div xmlns="http://www.w3.org/1999/xhtml" class="cell-breakdown">
+              <div class="breakdown-head">
+                <span>Bellman cell</span>
+                <strong>update {lo + 1}</strong>
+              </div>
+              <div class="state-pair">
+                <span>{@html texK} = <strong>{grid[activeRow].toFixed(3)}</strong></span>
+                <span>{@html texKp} = <strong>{grid[activeColumn].toFixed(3)}</strong></span>
+              </div>
+              {#if Number.isFinite(activeFlow)}
+                <div class="breakdown-line"><span>Consumption</span><strong>{activeConsumption.toFixed(3)}</strong></div>
+                <div class="breakdown-line"><span>{@html texPrevious}</span><strong>{fmt(activePrevious)}</strong></div>
+                <div class="breakdown-line"><span>{@html texCurrent}</span><strong>{fmt(activeFlow)}</strong></div>
+                <div class="breakdown-line"><span>{@html texContinuation}</span><strong>{fmt(activeContinuation)}</strong></div>
+                <div class="cell-total"><span>{@html texCandidate}</span><strong>{fmt(activeFlow)} + {fmt(activeContinuation)} = {fmt(activeCell)}</strong></div>
+                <div class="next-value"><span>{@html texNext}</span><strong>{fmt(activeNext)}</strong></div>
+                <div class:maximum={activeColumn === activeBest} class="max-note">
+                  {activeColumn === activeBest ? 'This cell is the row maximum.' : `Row maximum: k′ = ${grid[activeBest].toFixed(3)}`}
+                </div>
+              {:else}
+                <div class="infeasible-cell">Consumption is non-positive, so this cell has value −∞.</div>
+              {/if}
+            </div>
+          </foreignObject>
+        {/if}
         <rect x={matrixPlot.left} y={matrixPlot.top} width={matrixPlot.width} height={matrixPlot.height} class="frame" />
         {#each kTicks as tick}
           <line x1={MX(Math.max(kMin, Math.min(kMax, tick)))} x2={MX(Math.max(kMin, Math.min(kMax, tick)))} y1={matrixPlot.top + matrixPlot.height} y2={matrixPlot.top + matrixPlot.height + 7} class="axis-tick" />
@@ -275,7 +297,6 @@
   .iteration .note.last { padding-bottom: 10px; border-bottom: 1px solid #e3e6ec; }
   .iteration em { font-style: normal; letter-spacing: 0; font-size: .79rem; }
   .iteration strong { color: #111318; font-size: .95rem; letter-spacing: -.02em; }
-  .iteration .best-choice { color: #0000cd; }
   .buttons { display: flex; gap: 8px; }
   .reset { border: 1px solid #d8dfed; background: white; border-radius: 8px; padding: 7px 12px; font-size: .75rem; white-space: nowrap; transition: border-color .18s ease, transform .18s ease; }
   .reset:hover { border-color: #111318; transform: translateY(-1px); }
@@ -287,8 +308,23 @@
   svg { width: 100%; height: auto; max-height: calc(100vh - 185px); min-height: 300px; display: block; touch-action: none; }
   .chart-title { font: 700 17px 'Source Sans Pro', sans-serif; fill: #111318; }
   .chart-subtitle { font: 13px 'Source Sans Pro', sans-serif; fill: #606b7d; }
-  .selected-row { fill: none; stroke: #e49350; stroke-width: 2; pointer-events: none; }
-  .selected-cell { fill: none; stroke: #111318; stroke-width: 2; pointer-events: none; }
+  .selected-cell { fill: rgba(17,19,24,.22); stroke: #111318; stroke-width: 2.5; pointer-events: none; }
+  .breakdown-object { pointer-events: none; }
+  .cell-breakdown { box-sizing: border-box; height: 100%; padding: 14px 16px; border: 1px solid #111318; border-radius: 12px; background: rgba(255,255,255,.97); box-shadow: 0 12px 32px rgba(17,19,24,.18); color: #111318; font-family: 'Source Sans Pro', sans-serif; font-variant-numeric: tabular-nums; }
+  .breakdown-head, .state-pair, .breakdown-line, .cell-total, .next-value { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+  .breakdown-head { padding-bottom: 8px; border-bottom: 1px solid #dfe3eb; font-size: 17px; font-weight: 700; }
+  .breakdown-head strong { color: #0000cd; font-size: 15px; }
+  .state-pair { padding: 8px 0 6px; color: #4e596d; font-size: 14px; }
+  .state-pair strong { color: #111318; font-size: 16px; }
+  .breakdown-line { padding: 2px 0; font-size: 14px; }
+  .breakdown-line strong { font-size: 17px; }
+  .cell-total { margin-top: 7px; padding: 7px 0; border-top: 1px solid #dfe3eb; border-bottom: 1px solid #dfe3eb; font-size: 15px; }
+  .cell-total strong { font-size: 17px; }
+  .next-value { padding-top: 7px; color: #0000cd; font-size: 16px; font-weight: 700; }
+  .next-value strong { font-size: 20px; }
+  .max-note { margin-top: 5px; color: #596579; font-size: 13px; }
+  .max-note.maximum { color: #0000cd; font-weight: 700; }
+  .infeasible-cell { margin-top: 18px; padding: 16px; border-radius: 8px; background: #f1f2f5; font-size: 17px; line-height: 1.4; }
   .grid { stroke: #edf1f8; stroke-width: 1; }
   .axis-tick { stroke: #8691a7; stroke-width: 1.4; }
   .frame { fill: none; stroke: #8691a7; stroke-width: 1.4; pointer-events: none; }
