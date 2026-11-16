@@ -4,9 +4,9 @@
   import { renderToString } from 'katex';
   import { makeVfi } from '../lib/vfi.js';
 
-  const W = 960, H = 600;
-  const matrixPlot = { left: 74, top: 70, width: 470, height: 470 };
-  const matrixInfo = { left: 574, top: 70, width: 360, height: 270 };
+  const W = 960, H = 610;
+  const matrixPlot = { left: 55, top: 64, width: 486, height: 486 };
+  const matrixInfo = { left: 557, top: 64, width: 393, height: 290 };
   const valuePlot = { left: 74, top: 70, width: 860, height: 470 };
   const model = makeVfi({ N: 50, maxIteration: 120 });
   const { grid, values, matrices, policies, gaps, N, maxIteration, steady } = model;
@@ -292,7 +292,7 @@
           <text x={matrixPlot.left - 15} y={MY(Math.max(kMin, Math.min(kMax, tick))) + 5} class="tick" text-anchor="end">{tick.toFixed(1)}</text>
         {/each}
         <text x={matrixPlot.left + matrixPlot.width / 2} y={H - 10} class="axis-label" text-anchor="middle">Next capital, k′</text>
-        <text transform={`translate(19 ${matrixPlot.top + matrixPlot.height / 2}) rotate(-90)`} class="axis-label" text-anchor="middle">Current capital, k</text>
+        <text transform={`translate(8 ${matrixPlot.top + matrixPlot.height / 2}) rotate(-90)`} class="axis-label" text-anchor="middle">Current capital, k</text>
       {:else}
         <text x={valuePlot.left} y="32" class="chart-title">Value-function convergence</text>
         <text x={valuePlot.left} y="55" class="chart-subtitle">Input Vₙ, row maxima Vₙ₊₁, and the converged function</text>
