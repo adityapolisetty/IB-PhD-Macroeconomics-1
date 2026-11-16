@@ -5,7 +5,8 @@
   import { makeVfi } from '../lib/vfi.js';
 
   const W = 960, H = 600;
-  const matrixPlot = { left: 74, top: 70, width: 860, height: 470 };
+  const matrixPlot = { left: 74, top: 70, width: 470, height: 470 };
+  const matrixInfo = { left: 574, top: 70, width: 360, height: 270 };
   const valuePlot = { left: 74, top: 70, width: 860, height: 470 };
   const model = makeVfi({ N: 50, maxIteration: 120 });
   const { grid, values, matrices, policies, gaps, N, maxIteration, steady } = model;
@@ -41,6 +42,7 @@
   let matrixCanvas;
   let matrixImage;
   let hover = null;
+  let selected = null;
 
   $: lo = Math.min(maxIteration, Math.max(0, Math.floor(Number(shown))));
   $: matrix = matrices[lo];
@@ -48,8 +50,9 @@
   $: outputValue = values[lo + 1];
   $: policy = policies[lo];
   $: gap = gaps[lo];
-  $: activeRow = hover ? hover.i : steadyRow;
-  $: activeColumn = hover ? hover.j : policy[activeRow];
+  $: focusedCell = hover || selected;
+  $: activeRow = focusedCell ? focusedCell.i : steadyRow;
+  $: activeColumn = focusedCell ? focusedCell.j : policy[activeRow];
   $: activeConsumption = model.consumption[activeRow][activeColumn];
   $: activeFlow = model.flow[activeRow][activeColumn];
   $: activePrevious = inputValue[activeColumn];
@@ -67,9 +70,11 @@
     if (!Number.isFinite(value)) return [241, 242, 245];
     const [min, max] = model.matrixRange;
     const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
-    const eased = .08 + .92 * t;
-    const mix = (a, b) => Math.round(a + eased * (b - a));
-    return [mix(238, 0), mix(238, 0), mix(255, 205)];
+    const palette = [[255, 255, 204], [254, 178, 76], [240, 59, 32], [189, 0, 38]];
+    const scaled = t * (palette.length - 1);
+    const index = Math.min(palette.length - 2, Math.floor(scaled));
+    const weight = scaled - index;
+    return palette[index].map((channel, i) => Math.round(channel + weight * (palette[index + 1][i] - channel)));
   };
 
   function paintMatrix(current, currentPolicy) {
@@ -106,21 +111,52 @@
     shown = 0;
     sliderValue = 0;
     hover = null;
+    selected = null;
   }
   function changeView() {
     hover = null;
+    selected = null;
   }
-  function pointer(event) {
-    if (!chart || viewMode !== 'matrix') return;
+  function cellAtPointer(event) {
+    if (!chart || viewMode !== 'matrix') return null;
     const p = chart.createSVGPoint();
     p.x = event.clientX; p.y = event.clientY;
     const q = p.matrixTransform(chart.getScreenCTM().inverse());
     const inside = q.x >= matrixPlot.left && q.x <= matrixPlot.left + matrixPlot.width
       && q.y >= matrixPlot.top && q.y <= matrixPlot.top + matrixPlot.height;
-    if (!inside) { hover = null; return; }
+    if (!inside) return null;
     const j = Math.max(0, Math.min(N - 1, Math.floor((q.x - matrixPlot.left) / cellWidth)));
     const fromTop = Math.max(0, Math.min(N - 1, Math.floor((q.y - matrixPlot.top) / cellHeight)));
-    hover = { i: N - 1 - fromTop, j };
+    return { i: N - 1 - fromTop, j };
+  }
+  function pointer(event) {
+    hover = cellAtPointer(event);
+  }
+  function selectCell(event) {
+    const next = cellAtPointer(event);
+    if (!next) return;
+    selected = next;
+    hover = null;
+    chart.focus();
+  }
+  function navigate(event) {
+    if (viewMode !== 'matrix' || !selected) return;
+    let { i, j } = selected;
+    if (event.key === 'ArrowLeft') j--;
+    else if (event.key === 'ArrowRight') j++;
+    else if (event.key === 'ArrowUp') i++;
+    else if (event.key === 'ArrowDown') i--;
+    else if (event.key === 'Escape') {
+      selected = null;
+      hover = null;
+      return;
+    } else return;
+    event.preventDefault();
+    selected = {
+      i: Math.max(0, Math.min(N - 1, i)),
+      j: Math.max(0, Math.min(N - 1, j)),
+    };
+    hover = null;
   }
   function frame(now) {
     if (playing && lastFrame) {
@@ -190,23 +226,25 @@
           <option value={8}>8 updates/s</option>
         </select>
       </label>
-      <span class="hint">{viewMode === 'matrix' ? 'Move across the matrix to inspect a candidate choice' : 'Use the slider to compare successive value functions'}</span>
+      <span class="hint">{viewMode === 'matrix' ? 'Click a cell, then use the arrow keys to move across the matrix' : 'Use the slider to compare successive value functions'}</span>
     </div>
 
     <div class="chart-stage">
-      <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={viewMode === 'matrix' ? `Value function iteration ${lo} to ${lo + 1}: N by N candidate matrix` : `Value function iteration ${lo} to ${lo + 1}: converging value functions`} on:pointermove={pointer} on:pointerleave={() => hover = null}>
+      <svg bind:this={chart} viewBox={`0 0 ${W} ${H}`} role="img" tabindex={viewMode === 'matrix' ? 0 : undefined} aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Escape" aria-label={viewMode === 'matrix' ? `Value function iteration ${lo}: N by N candidate matrix. Click a cell and use arrow keys to navigate.` : `Value function iteration ${lo}: converging value functions`} on:pointermove={pointer} on:pointerleave={() => hover = null} on:click={selectCell} on:keydown={navigate}>
       <defs>
         <clipPath id="vfi-value-clip"><rect x={valuePlot.left} y={valuePlot.top} width={valuePlot.width} height={valuePlot.height} /></clipPath>
         <linearGradient id="vfi-heat-legend" x1="0" x2="1">
-          <stop offset="0" stop-color="rgb(219,219,251)" />
-          <stop offset="1" stop-color="rgb(0,0,205)" />
+          <stop offset="0" stop-color="#ffffcc" />
+          <stop offset="40%" stop-color="#feb24c" />
+          <stop offset="70%" stop-color="#f03b20" />
+          <stop offset="1" stop-color="#bd0026" />
         </linearGradient>
       </defs>
 
       {#if viewMode === 'matrix'}
         <text x={matrixPlot.left} y="32" class="chart-title">Candidate matrix</text>
         <text x={matrixPlot.left} y="55" class="chart-subtitle">Rows: current capital · columns: next capital · white cells: row maxima</text>
-        <g class="heat-legend" transform={`translate(${matrixPlot.left + matrixPlot.width - 340} 32)`}>
+        <g class="heat-legend" transform={`translate(${matrixInfo.left} 32)`}>
           <text x="0" y="4">lower</text>
           <rect x="38" y="-8" width="90" height="12" rx="3" fill="url(#vfi-heat-legend)" />
           <text x="135" y="4">higher</text>
@@ -218,9 +256,9 @@
         <foreignObject x={matrixPlot.left} y={matrixPlot.top} width={matrixPlot.width} height={matrixPlot.height}>
           <canvas xmlns="http://www.w3.org/1999/xhtml" bind:this={matrixCanvas} class="matrix-canvas" width={N} height={N} aria-hidden="true"></canvas>
         </foreignObject>
-        {#if hover}
+        {#if focusedCell}
           <rect x={matrixPlot.left + activeColumn * cellWidth + .5} y={matrixPlot.top + (N - 1 - activeRow) * cellHeight + .5} width={Math.max(1, cellWidth - 1)} height={Math.max(1, cellHeight - 1)} class="selected-cell" />
-          <foreignObject class="breakdown-object" x={matrixPlot.left + matrixPlot.width - 385} y={matrixPlot.top + 18} width="365" height="270">
+          <foreignObject class="breakdown-object" x={matrixInfo.left} y={matrixInfo.top} width={matrixInfo.width} height={matrixInfo.height}>
             <div xmlns="http://www.w3.org/1999/xhtml" class="cell-breakdown">
               <div class="breakdown-head">
                 <span>Bellman cell</span>
