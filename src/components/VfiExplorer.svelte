@@ -171,7 +171,7 @@
       </div>
 
       <div class="iteration">
-        <span><em>Bellman update</em> <strong>{lo} → {lo + 1}</strong></span>
+        <span><em>Bellman update</em> <strong>{lo}</strong></span>
         <span class="divided"><em>Largest value change</em> <strong>{gap.toExponential(2)}</strong></span>
         <span><em>Error bound</em> <strong>{(gap / (1 - model.parameters.beta)).toExponential(2)}</strong></span>
         {#if viewMode === 'matrix'}
@@ -211,7 +211,7 @@
             <div xmlns="http://www.w3.org/1999/xhtml" class="cell-breakdown">
               <div class="breakdown-head">
                 <span>Bellman cell</span>
-                <strong>update {lo + 1}</strong>
+                <strong>update {lo}</strong>
               </div>
               <div class="state-pair">
                 <span>{@html texK} = <strong>{grid[activeRow].toFixed(3)}</strong></span>
