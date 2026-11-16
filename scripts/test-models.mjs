@@ -82,10 +82,10 @@ check('Bellman feasibility, maximisers and contraction', () => {
   assert.ok(gap < 1e-6);
 });
 check('VFI matrix, row maxima and 120-update convergence', () => {
-  const m = makeVfi({ N: 150, maxIteration: 120 });
+  const m = makeVfi({ N: 50, maxIteration: 120 });
   assert.equal(m.matrices.length, 121);
-  assert.equal(m.matrices[0].length, 150);
-  assert.equal(m.matrices[0][0].length, 150);
+  assert.equal(m.matrices[0].length, 50);
+  assert.equal(m.matrices[0][0].length, 50);
   assert.ok(m.matrices[0].flat().some(v => v === -Infinity));
   for (const n of [0, 1, 30, 60, 120]) {
     for (let i = 0; i < m.N; i++) {

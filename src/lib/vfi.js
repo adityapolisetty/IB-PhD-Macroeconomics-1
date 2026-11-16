@@ -5,7 +5,7 @@ export const vfiParameters = {
   alpha: .3,
 };
 
-export function makeVfi({ A = 1, beta = .9, delta = .1, alpha = .3, N = 150, maxIteration = 120 } = {}) {
+export function makeVfi({ A = 1, beta = .9, delta = .1, alpha = .3, N = 50, maxIteration = 120 } = {}) {
   const steady = (alpha * A / (1 / beta - (1 - delta))) ** (1 / (1 - alpha));
   const grid = Array.from({ length: N }, (_, i) => .001 + i * (2 * steady - .001) / (N - 1));
   const consumption = grid.map(k => grid.map(next => A * k ** alpha + (1 - delta) * k - next));

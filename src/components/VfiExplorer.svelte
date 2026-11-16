@@ -7,7 +7,7 @@
   const W = 960, H = 600;
   const matrixPlot = { left: 74, top: 70, width: 860, height: 470 };
   const valuePlot = { left: 74, top: 70, width: 860, height: 470 };
-  const model = makeVfi({ N: 150, maxIteration: 120 });
+  const model = makeVfi({ N: 50, maxIteration: 120 });
   const { grid, values, matrices, policies, gaps, N, maxIteration, steady } = model;
   const cellWidth = matrixPlot.width / N;
   const cellHeight = matrixPlot.height / N;
