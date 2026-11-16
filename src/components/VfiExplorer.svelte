@@ -261,8 +261,8 @@
           <foreignObject class="breakdown-object" x={matrixInfo.left} y={matrixInfo.top} width={matrixInfo.width} height={matrixInfo.height}>
             <div xmlns="http://www.w3.org/1999/xhtml" class="cell-breakdown">
               <div class="breakdown-head">
-                <span>Bellman cell</span>
-                <strong>update {lo}</strong>
+                <span>Candidate value</span>
+                <strong>Update {lo}</strong>
               </div>
               <div class="state-pair">
                 <span>{@html texK} = <strong>{grid[activeRow].toFixed(3)}</strong></span>
